@@ -5591,6 +5591,7 @@ dependencies = [
  "dioxus",
  "ui",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
