@@ -26,16 +26,18 @@ pub enum VizError {
 }
 
 impl GViz {
-    async fn new() -> Result<Self, VizError> {
+    pub async fn new() -> Result<Self, VizError> {
         let promise = instance();
         let js_instance = JsFuture::from(promise).await.map_err(|e| {
             VizError::RenderError(format!("Failed to create Viz instance: {:?}", e))
         })?;
-        let instance: Viz = js_instance.dyn_into().unwrap();
+        let instance: Viz = js_instance
+            .dyn_into()
+            .map_err(|e| VizError::RenderError(format!("Failed to cast to Viz: {:?}", e)))?;
         Ok(Self { instance })
     }
 
-    fn render_dot(&self, dot: &str) -> String {
+    pub fn render_dot(&self, dot: &str) -> String {
         let element = self.instance.render_svg_element(dot);
         element.outer_html()
     }

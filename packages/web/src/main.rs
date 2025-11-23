@@ -1,4 +1,5 @@
 mod bindgen;
+use bindgen::GViz;
 
 use dioxus::prelude::*;
 
@@ -20,6 +21,9 @@ enum Route {
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
+// global signal for the GViz context
+static GVIZ_CONTEXT: GlobalSignal<Option<GViz>> = Signal::global(|| None);
+
 fn main() {
     dioxus::launch(App);
 }
@@ -27,6 +31,20 @@ fn main() {
 #[component]
 fn App() -> Element {
     // Build cool things ✌️
+
+    // set the context for graph visualization implementation
+    // we need to call GViz::new().await then set the context
+    // so we'll need a use_future then set the signal in the context
+    // when it's ready
+    spawn(async {
+        let gviz = GViz::new()
+            .await
+            .map_err(|e| {
+                panic!("Failed to create GViz instance: {:?}", e);
+            })
+            .unwrap();
+        *GVIZ_CONTEXT.write() = Some(gviz);
+    });
 
     rsx! {
         // Global app resources
