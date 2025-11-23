@@ -1,3 +1,5 @@
+mod bindgen;
+
 use dioxus::prelude::*;
 
 use ui::Navbar;
@@ -30,7 +32,13 @@ fn App() -> Element {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-
+        document::Script {
+            r#type: "module",
+            r#"
+            import * as Viz from 'https://cdn.jsdelivr.net/npm/@viz-js/viz@3.21.0/dist/viz.js';
+            window.Viz = Viz;
+            "#
+        }
         Router::<Route> {}
     }
 }

@@ -5590,6 +5590,8 @@ version = "0.1.0"
 dependencies = [
  "dioxus",
  "ui",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
