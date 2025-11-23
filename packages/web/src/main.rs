@@ -36,7 +36,24 @@ fn App() -> Element {
     // we need to call GViz::new().await then set the context
     // so we'll need a use_future then set the signal in the context
     // when it's ready
+    use gloo_timers::future::sleep;
+    use std::time::Duration;
+    use wasm_bindgen::JsValue;
+    use web_sys::js_sys::Reflect;
     spawn(async {
+        // Wait for the viz_instance_promise to be loaded
+        loop {
+            if let Ok(val) = Reflect::get(
+                &web_sys::window().unwrap(),
+                &JsValue::from_str("viz_instance"),
+            ) {
+                if !val.is_undefined() {
+                    break;
+                }
+            }
+            sleep(Duration::from_millis(50)).await;
+        }
+
         let gviz = GViz::new()
             .await
             .map_err(|e| {
@@ -53,8 +70,8 @@ fn App() -> Element {
         document::Script {
             r#type: "module",
             r#"
-            import * as Viz from 'https://cdn.jsdelivr.net/npm/@viz-js/viz@3.21.0/dist/viz.js';
-            window.Viz = Viz;
+            import {{ instance }} from 'https://cdn.jsdelivr.net/npm/@viz-js/viz@3.21.0/dist/viz.js';
+            window.viz_instance = instance;
             "#
         }
         Router::<Route> {}

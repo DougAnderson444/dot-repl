@@ -4,14 +4,13 @@ use web_sys::{js_sys, Element};
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_namespace = ["window", "Viz"])]
-    fn instance() -> js_sys::Promise;
+    #[wasm_bindgen(js_namespace = window, js_name = "viz_instance")]
+    fn viz_instance() -> js_sys::Promise;
 }
 
 #[wasm_bindgen]
 extern "C" {
     type Viz;
-
     #[wasm_bindgen(method, js_name = renderSVGElement)]
     fn render_svg_element(this: &Viz, dot: &str) -> Element;
 }
@@ -27,13 +26,11 @@ pub enum VizError {
 
 impl GViz {
     pub async fn new() -> Result<Self, VizError> {
-        let promise = instance();
+        let promise = viz_instance();
         let js_instance = JsFuture::from(promise).await.map_err(|e| {
             VizError::RenderError(format!("Failed to create Viz instance: {:?}", e))
         })?;
-        let instance: Viz = js_instance
-            .dyn_into()
-            .map_err(|e| VizError::RenderError(format!("Failed to cast to Viz: {:?}", e)))?;
+        let instance: Viz = js_instance.into();
         Ok(Self { instance })
     }
 
