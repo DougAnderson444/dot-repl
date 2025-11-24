@@ -1,12 +1,17 @@
 mod bindgen;
 use bindgen::GViz;
 
-use dioxus::prelude::*;
+use dioxus::{prelude::*, router::Navigator};
 
 use ui::Navbar;
-use views::{Blog, Home};
+use views::{Blog, GraphvizView, Home};
 
 mod views;
+
+use gloo_timers::future::sleep;
+use std::time::Duration;
+use wasm_bindgen::JsValue;
+use web_sys::js_sys::Reflect;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -16,10 +21,12 @@ enum Route {
     Home {},
     #[route("/blog/:id")]
     Blog { id: i32 },
+    /// Graphviz Route 
+    #[route("/graphviz/:encoded_dot")]
+    GraphvizView { encoded_dot: String },
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
-const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 // global signal for the GViz context
 static GVIZ_CONTEXT: GlobalSignal<Option<GViz>> = Signal::global(|| None);
@@ -36,10 +43,10 @@ fn App() -> Element {
     // we need to call GViz::new().await then set the context
     // so we'll need a use_future then set the signal in the context
     // when it's ready
-    use gloo_timers::future::sleep;
-    use std::time::Duration;
-    use wasm_bindgen::JsValue;
-    use web_sys::js_sys::Reflect;
+    // let navigator = use_navigator();
+    use_context_provider(|| None::<Navigator>);
+    // use_context_provider(|| Some(navigator));
+
     spawn(async {
         // Wait for the viz_instance_promise to be loaded
         loop {
@@ -66,7 +73,6 @@ fn App() -> Element {
     rsx! {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Script {
             r#type: "module",
             r#"

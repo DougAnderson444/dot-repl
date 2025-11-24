@@ -6,6 +6,19 @@ edition = "2021"
 [dependencies]
 dioxus = { workspace = true }
 api = { workspace = true }
+roxmltree = "0.21.1"
+roughr = { version = "0.12.0", optional = true }
+num-traits = { version = "0.2", optional = true }
+euclid = { version = "0.22", optional = true }
+base64.workspace = true
+
+# roughr needs wasm getrandom support
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# getrandom = { version = "0.3", features = ["wasm_js"] }
+# We have netsed deps that use v0.2, so we need to ensure the feature is flagged here
+getrandom_v02 = { package = "getrandom", version = "0.2.15", features = ["js"] }
 
 [features]
+default = ["rough"]
+rough = ["roughr", "num-traits", "euclid"]
 server = ["api/server"]

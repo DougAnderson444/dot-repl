@@ -1,0 +1,289 @@
+//! Component to render DOT graphs using Graphvizm and Dioxus
+mod render;
+use render::{GraphvizSvg, SvgBuildConfig};
+
+use dioxus::prelude::*;
+// use graphvizm::Graphvizm;
+
+// read kitchen_sink.dot from assets
+// const KITCHEN_SINK_DOT: Asset = asset!("/assets/kitchen_sink.dot");
+// const KITCHEN_SINK_DOT: &str = include_str!("../../assets/kitchen_sink.dot");
+// const SIMPLE_DOT: Asset = asset!("/assets/simple.dot");
+// const SIMPLE_DOT: &str = include_str!("../../assets/simple.dot");
+
+// #[component]
+// pub fn DotDisplay(dot_source: ReadSignal<String>) -> Element {
+//     // Create the Graphvizm instance once
+//     let graphviz = use_hook(move || Graphvizm::new().ok());
+//
+//     // Reactively render SVG whenever dot_source signal changes
+//     let svg_result = use_memo(move || {
+//         graphviz
+//             .as_ref()
+//             .and_then(|g| g.render_dot(&dot_source()).ok())
+//     });
+//
+//     let svg_build_config = SvgBuildConfig::default();
+//
+//     rsx! {
+//         div {
+//             class: "w-full h-full overflow-auto",
+//
+//             match svg_result() {
+//                 Some(svg) => rsx! {
+//                     // Reference rendering
+//                     // div {
+//                     //     class: "mb-2 text-sm text-gray-600",
+//                     //     dangerous_inner_html: {svg}
+//                     // },
+//                     div {
+//                         class: "p-2",
+//                         GraphvizSvg {
+//                             svg_text: &svg,
+//                             config: svg_build_config
+//                         }
+//                     }
+//                 },
+//                 None => rsx! {
+//                     div {
+//                         class: "text-red-500 p-4 text-center",
+//                         "No graph to render."
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+
+#[component]
+pub fn SvgDisplay(svg: String) -> Element {
+    let svg_build_config = SvgBuildConfig::default();
+
+    rsx! {
+        div {
+            class: "w-full h-full overflow-auto",
+            GraphvizSvg {
+                svg_text: &svg,
+                config: svg_build_config
+            }
+        }
+    }
+}
+
+// // Example usage component with live editing
+// #[component]
+// pub fn GraphEditor() -> Element {
+//     let mut dot_input = use_signal(|| {
+//         let kitchen = KITCHEN_SINK_DOT.to_string();
+//         kitchen
+//     });
+//
+//     rsx! {
+//         div {
+//             class: "grid grid-cols-1 md:grid-cols-2 gap-4 h-screen p-4 bg-gray-50",
+//
+//             div {
+//                 class: "flex flex-col space-y-4",
+//
+//                 h2 {
+//                     class: "text-2xl font-bold text-gray-800",
+//                     "DOT Source"
+//                 }
+//
+//                 textarea {
+//                     class: "flex-1 font-mono text-sm p-3 border border-gray-300 rounded-lg
+//                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+//                             resize-none bg-white shadow-sm",
+//                     rows: 10,
+//                     value: "{dot_input}",
+//                     oninput: move |e| dot_input.set(e.value()),
+//                     placeholder: "Enter your DOT graph here..."
+//                 }
+//             }
+//
+//             div {
+//                 class: "flex flex-col space-y-4",
+//
+//                 h2 {
+//                     class: "text-2xl font-bold text-gray-800",
+//                     "Preview"
+//                 }
+//
+//                 div {
+//                     class: "flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm",
+//                     DotDisplay {
+//                         dot_source: dot_input
+//                     }
+//                 }
+//
+//
+//             }
+//         }
+//     }
+// }
+//
+// // Simple display-only component
+// #[component]
+// pub fn SimpleGraph() -> Element {
+//     let dot = use_signal(|| {
+//         r#"digraph Example {
+//     rankdir=LR;
+//     node [shape=box, style=filled, fillcolor=lightblue];
+//
+//     Start -> Process;
+//     Process -> Decision;
+//     Decision -> End [label="yes"];
+//     Decision -> Process [label="no"];
+// }"#
+//         .to_string()
+//     });
+//
+//     rsx! {
+//         div {
+//             class: "container mx-auto p-8",
+//
+//             h1 {
+//                 class: "text-3xl font-bold mb-6 text-gray-900",
+//                 "My Graph"
+//             }
+//
+//             div {
+//                 class: "bg-white rounded-lg shadow-lg p-6 border border-gray-200",
+//                 DotDisplay {
+//                     dot_source: dot
+//                 }
+//             }
+//         }
+//     }
+// }
+//
+// // Dark mode variant of the editor
+// #[component]
+// pub fn DarkGraphEditor() -> Element {
+//     let mut dot_input = use_signal(|| {
+//         r#"digraph G {
+//     A -> B;
+//     B -> C;
+//     C -> A;
+// }"#
+//         .to_string()
+//     });
+//
+//     rsx! {
+//         div {
+//             class: "grid grid-cols-1 md:grid-cols-2 gap-4 h-screen p-4 bg-gray-900",
+//
+//             div {
+//                 class: "flex flex-col space-y-4",
+//
+//                 h2 {
+//                     class: "text-2xl font-bold text-gray-100",
+//                     "DOT Source"
+//                 }
+//
+//                 textarea {
+//                     class: "flex-1 font-mono text-sm p-3 border border-gray-700 rounded-lg
+//                             focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+//                             resize-none bg-gray-800 text-gray-100 shadow-lg",
+//                     rows: 10,
+//                     value: "{dot_input}",
+//                     oninput: move |e| dot_input.set(e.value()),
+//                     placeholder: "Enter your DOT graph here..."
+//                 }
+//             }
+//
+//             div {
+//                 class: "flex flex-col space-y-4",
+//
+//                 h2 {
+//                     class: "text-2xl font-bold text-gray-100",
+//                     "Preview"
+//                 }
+//
+//                 div {
+//                     class: "flex-1 border border-gray-700 rounded-lg overflow-hidden bg-gray-800 shadow-lg",
+//                     DotDisplay {
+//                         dot_source: dot_input
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+//
+// // Compact inline graph display with ReadOnlySignal
+// #[component]
+// pub fn InlineGraph(dot_source: ReadSignal<String>, title: Option<String>) -> Element {
+//     rsx! {
+//         div {
+//             class: "my-4",
+//
+//             if let Some(title) = title {
+//                 h3 {
+//                     class: "text-lg font-semibold text-gray-700 mb-2",
+//                     "{title}"
+//                 }
+//             }
+//
+//             div {
+//                 class: "bg-gray-50 rounded-md p-4 border border-gray-200",
+//                 DotDisplay {
+//                     dot_source
+//                 }
+//             }
+//         }
+//     }
+// }
+//
+// // Example: Dynamic graph that updates based on user interaction
+// #[component]
+// pub fn DynamicGraphExample() -> Element {
+//     let mut node_count = use_signal(|| 3);
+//
+//     // Compute the DOT string based on node_count
+//     let dot_source = use_memo(move || {
+//         let count = node_count();
+//         let mut edges = String::new();
+//         for i in 0..count {
+//             if i < count - 1 {
+//                 edges.push_str(&format!("    Node{} -> Node{};\n", i, i + 1));
+//             }
+//         }
+//         format!("digraph Dynamic {{\n    rankdir=LR;\n{}}}", edges)
+//     });
+//
+//     rsx! {
+//         div {
+//             class: "container mx-auto p-8",
+//
+//             div {
+//                 class: "mb-4 flex items-center gap-4",
+//
+//                 label {
+//                     class: "text-lg font-semibold text-gray-700",
+//                     "Node Count: {node_count}"
+//                 }
+//
+//                 input {
+//                     r#type: "range",
+//                     class: "w-64",
+//                     min: "2",
+//                     max: "10",
+//                     value: "{node_count}",
+//                     oninput: move |e| {
+//                         if let Ok(val) = e.value().parse::<i32>() {
+//                             node_count.set(val);
+//                         }
+//                     }
+//                 }
+//             }
+//
+//             div {
+//                 class: "bg-white rounded-lg shadow-lg p-6 border border-gray-200",
+//                 DotDisplay {
+//                     dot_source: Signal::new(dot_source())
+//                 }
+//             }
+//         }
+//     }
+// }

@@ -11,3 +11,5 @@ mod echo;
 pub use echo::Echo;
 
 pub mod views;
+
+pub mod components;
