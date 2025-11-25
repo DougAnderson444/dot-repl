@@ -12,6 +12,8 @@ members = [
 dioxus = { version = "0.7.1" }
 base64 = "0.22.1"
 web-sys = { version = "0.3", features = ["Element", "Window"] }
+directories = "6.0.0"
+thiserror = "2"
 
 # workspace
 ui = { path = "packages/ui" }

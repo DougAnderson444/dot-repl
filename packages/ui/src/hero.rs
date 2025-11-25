@@ -1,7 +1,7 @@
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use dioxus::prelude::*;
 
-const HERO_CSS: Asset = asset!("/assets/styling/hero.css");
+// const HERO_CSS: Asset = asset!("/assets/styling/hero.css");
 const HEADER_SVG: Asset = asset!("/assets/header.svg");
 
 #[component]
@@ -16,7 +16,7 @@ pub fn Hero() -> Element {
     let encoded_dot = URL_SAFE.encode(&dot);
 
     rsx! {
-        document::Link { rel: "stylesheet", href: HERO_CSS }
+        // document::Link { rel: "stylesheet", href: HERO_CSS }
 
 
         div {

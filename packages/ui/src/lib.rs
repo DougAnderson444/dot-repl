@@ -11,3 +11,6 @@ pub use echo::Echo;
 pub mod views;
 
 pub mod components;
+
+mod storage;
+pub use storage::{PlatformStorage, StorageProvider};

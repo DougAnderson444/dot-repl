@@ -1237,7 +1237,9 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "dioxus",
+ "directories",
  "graphvizm",
+ "thiserror 2.0.17",
  "ui",
 ]
 
@@ -1901,6 +1903,15 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-streams",
  "web-sys",
+]
+
+[[package]]
+name = "directories"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16f5094c54661b38d03bd7e50df373292118db60b585c08a411c6d840017fe7d"
+dependencies = [
+ "dirs-sys",
 ]
 
 [[package]]
@@ -2727,6 +2738,21 @@ dependencies = [
  "thiserror 1.0.69",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-storage"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fbc8031e8c92758af912f9bc08fbbadd3c6f3cfcbf6b64cdf3d6a81f0139277a"
+dependencies = [
+ "gloo-utils",
+ "js-sys",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "wasm-bindgen",
  "web-sys",
 ]
 
@@ -6899,6 +6925,7 @@ dependencies = [
  "base64",
  "dioxus",
  "getrandom 0.3.4",
+ "gloo-storage",
  "gloo-timers",
  "ui",
  "wasm-bindgen",

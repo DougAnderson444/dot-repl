@@ -1,9 +1,11 @@
 mod bindgen;
 use bindgen::GViz;
 
-use dioxus::{prelude::*, router::Navigator};
+mod storage;
 
-use ui::Navbar;
+use dioxus::prelude::*;
+
+use ui::{Navbar, StorageProvider};
 use views::{Blog, GraphvizView, Home};
 
 mod views;
@@ -39,6 +41,11 @@ fn main() {
 #[component]
 fn App() -> Element {
     // Build cool things ✌️
+    let storage = storage::WebStorage::new();
+    let storage_provider = StorageProvider::new(storage);
+
+    // provide storgae in context for all child elements
+    use_context_provider(|| storage_provider);
     spawn(async {
         // Wait for the viz_instance_promise to be loaded
         loop {

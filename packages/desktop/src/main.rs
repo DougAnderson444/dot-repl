@@ -1,7 +1,12 @@
 //! A desktop application built with Dioxus that features routing and a navbar.
+mod storage;
+
+mod error;
+pub use error::Error;
+
 use dioxus::prelude::*;
 
-use ui::Navbar;
+use ui::{Navbar, StorageProvider};
 use views::{Blog, GraphvizView, Home};
 
 mod views;
@@ -21,8 +26,6 @@ enum Route {
     GraphvizView { encoded_dot: String },
 }
 
-const MAIN_CSS: Asset = asset!("/assets/main.css");
-
 // global signal for the GViz context
 static GVIZ_CONTEXT: GlobalSignal<Option<Graphvizm>> = Signal::global(|| None);
 
@@ -33,6 +36,12 @@ fn main() {
 #[component]
 fn App() -> Element {
     // Build cool things ✌️
+    let storage = storage::DesktopStorage::new().unwrap();
+    let storage_provider = StorageProvider::new(storage.clone());
+
+    // provide storage in context for all child elements
+    use_context_provider(|| storage_provider);
+
     // Create the Graphvizm instance once
     use_hook(|| {
         if let Ok(gviz) = Graphvizm::new() {

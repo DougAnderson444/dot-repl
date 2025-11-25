@@ -11,6 +11,7 @@ wasm-bindgen-futures = "0.4"
 web-sys = { workspace = true, features = ["Element", "Window"] }
 gloo-timers = { version = "0.3", features = ["futures"] }
 base64.workspace = true
+gloo-storage = "0.3.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }
