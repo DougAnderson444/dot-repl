@@ -1,12 +1,13 @@
 // Graphviz
 use crate::{Route, GVIZ_CONTEXT};
-use base64::{prelude::BASE64_STANDARD, Engine as _};
+use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use dioxus::prelude::*;
 use ui::views::GraphView;
 
 #[component]
 pub fn GraphvizView(encoded_dot: String) -> Element {
-    let dot = BASE64_STANDARD
+
+    let dot = URL_SAFE
         .decode(&encoded_dot)
         .unwrap_or_else(|_| b"digraph { error -> decoding; }".to_vec())
         .into_iter()

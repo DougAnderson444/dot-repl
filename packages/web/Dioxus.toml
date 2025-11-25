@@ -1,0 +1,17 @@
+[application]
+
+# App name
+name = "Dot REPL"
+
+# Static files copied verbatim into the built app (set to enable, e.g. "public")
+public_dir = "public"
+
+[web.app]
+
+# HTML title tag content
+title = "Dot REPL"
+
+[web.watcher]
+
+# When watcher is triggered, regenerate the `index.html`
+reload_html = true

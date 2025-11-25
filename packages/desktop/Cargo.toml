@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dioxus = { workspace = true, features = ["router", "fullstack"] }
-ui = { workspace = true }
+dioxus = { workspace = true, features = ["router"] }
+ui = { workspace = true, features = ["desktop"] }
+base64.workspace = true
+graphvizm = { path = "../../../../wasm/graphvizm/crates/graphvizm" }
 
 [features]
-default = []
+default = ["desktop"]
 desktop = ["dioxus/desktop"]
 server = ["dioxus/server", "ui/server"]

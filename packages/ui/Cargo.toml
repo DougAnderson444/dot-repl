@@ -17,8 +17,10 @@ base64.workspace = true
 # getrandom = { version = "0.3", features = ["wasm_js"] }
 # We have netsed deps that use v0.2, so we need to ensure the feature is flagged here
 getrandom_v02 = { package = "getrandom", version = "0.2.15", features = ["js"] }
+web-sys = { workspace = true }
 
 [features]
 default = ["rough"]
+desktop = []
 rough = ["roughr", "num-traits", "euclid"]
 server = ["api/server"]

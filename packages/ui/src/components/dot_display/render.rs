@@ -83,11 +83,14 @@ impl Default for SvgBuildConfig {
     fn default() -> Self {
         SvgBuildConfig {
             classify_link: |href: &str| {
+                tracing::debug!("Classifying link href: {}", href);
                 if let Some(rest) = href.strip_prefix('#') {
                     LinkKind::Fragment(rest.to_string())
                 } else if href.starts_with("http://") || href.starts_with("https://") {
                     LinkKind::External(href.to_string())
-                } else if href.starts_with('/') {
+                } else
+                // include dioxus://index.html/graphviz/ZGlncmFwaC...
+                if href.starts_with('/') {
                     LinkKind::Internal(href.to_string())
                 } else {
                     LinkKind::None
@@ -551,7 +554,7 @@ fn strip_doctype(raw: &str) -> Cow<'_, str> {
 
 #[component]
 pub fn GraphvizSvg(svg_text: String, config: SvgBuildConfig) -> Element {
-    let navigator = use_context::<Option<Navigator>>();
+    let navigator = use_navigator();
 
     let mut cow: Cow<'_, str> = if config.strip_doctype {
         strip_doctype(&svg_text)
@@ -578,7 +581,7 @@ pub fn GraphvizSvg(svg_text: String, config: SvgBuildConfig) -> Element {
         return rsx! { svg { class: "graphviz-svg error", "No <svg> root found." } };
     };
 
-    build_node(root, &config, navigator.as_ref()).unwrap_or(rsx! {})
+    build_node(root, &config, navigator).unwrap_or(rsx! {})
 }
 
 fn render_parse_error(err: roxmltree::Error, did_strip: bool) -> Element {
@@ -593,7 +596,7 @@ fn render_parse_error(err: roxmltree::Error, did_strip: bool) -> Element {
 
 // ------------------------- Recursive build -------------------------
 
-fn build_node(node: Node, cfg: &SvgBuildConfig, navigator: Option<&Navigator>) -> Option<Element> {
+fn build_node(node: Node, cfg: &SvgBuildConfig, navigator: Navigator) -> Option<Element> {
     if node.is_text() {
         let t = node.text().unwrap_or_default();
         if t.trim().is_empty() {
@@ -864,7 +867,7 @@ fn build_anchor(
     a: SvgAttrs,
     children: Vec<Element>,
     cfg: &SvgBuildConfig,
-    navigator: Option<&Navigator>,
+    navigator: Navigator,
 ) -> Element {
     let mut effective_href = a.href.clone().or(a.xlink_href.clone());
 
@@ -877,6 +880,8 @@ fn build_anchor(
     }
 
     let tooltip_node = a.xlink_title.as_ref().map(|t| rsx! { title { "{t}" } });
+
+    tracing::debug!("Building anchor for href: {:?}", effective_href);
 
     match effective_href {
         Some(href) => {
@@ -901,6 +906,13 @@ fn build_anchor(
                                         tracing::error!("Failed to navigate to {}: {}", url_owned, e);
                                     }
                                 }
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let url = url_owned.clone();
+                                    let _ = web_sys::window()
+                                        .and_then(|w| w.open_with_url_and_target(&url_owned, "_blank").ok())
+                                        .flatten();
+                                }
                             },
                             { tooltip_node }
                             for child in children { {child} }
@@ -918,15 +930,10 @@ fn build_anchor(
                             "data-href": "{route}",
                             cursor: "pointer",
                             onclick: {
-                                let navigator = navigator.cloned();
                                 move |evt| {
+                                    tracing::info!("Internal link clicked, navigating to {}", route_owned);
                                     evt.prevent_default();
-                                    if let Some(nav) = navigator {
-                                        tracing::info!("Internal route navigation to {}", route_owned);
-                                        nav.push(route_owned.as_str());
-                                    } else {
-                                        tracing::warn!("No router available for internal navigation to {}", route_owned);
-                                    }
+                                    navigator.push(route_owned.as_str());
                                 }
                             },
                             { tooltip_node }
@@ -958,6 +965,7 @@ fn build_anchor(
                     }
                 }
                 LinkKind::None => {
+                    tracing::warn!("LinkKind::None for href: {}", href);
                     rsx! {
                         g {
                             id: a.id,

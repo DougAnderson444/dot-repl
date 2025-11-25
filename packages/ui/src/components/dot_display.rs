@@ -1,6 +1,6 @@
 //! Component to render DOT graphs using Graphvizm and Dioxus
 mod render;
-use render::{GraphvizSvg, SvgBuildConfig};
+pub use render::{GraphvizSvg, SvgBuildConfig};
 
 use dioxus::prelude::*;
 // use graphvizm::Graphvizm;

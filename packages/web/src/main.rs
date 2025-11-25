@@ -27,6 +27,7 @@ enum Route {
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
+const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 // global signal for the GViz context
 static GVIZ_CONTEXT: GlobalSignal<Option<GViz>> = Signal::global(|| None);
@@ -38,15 +39,6 @@ fn main() {
 #[component]
 fn App() -> Element {
     // Build cool things ✌️
-
-    // set the context for graph visualization implementation
-    // we need to call GViz::new().await then set the context
-    // so we'll need a use_future then set the signal in the context
-    // when it's ready
-    // let navigator = use_navigator();
-    use_context_provider(|| None::<Navigator>);
-    // use_context_provider(|| Some(navigator));
-
     spawn(async {
         // Wait for the viz_instance_promise to be loaded
         loop {
@@ -73,6 +65,7 @@ fn App() -> Element {
     rsx! {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Script {
             r#type: "module",
             r#"
