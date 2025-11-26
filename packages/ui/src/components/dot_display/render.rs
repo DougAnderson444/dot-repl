@@ -83,7 +83,6 @@ impl Default for SvgBuildConfig {
     fn default() -> Self {
         SvgBuildConfig {
             classify_link: |href: &str| {
-                tracing::debug!("Classifying link href: {}", href);
                 if let Some(rest) = href.strip_prefix('#') {
                     LinkKind::Fragment(rest.to_string())
                 } else if href.starts_with("http://") || href.starts_with("https://") {
@@ -880,8 +879,6 @@ fn build_anchor(
     }
 
     let tooltip_node = a.xlink_title.as_ref().map(|t| rsx! { title { "{t}" } });
-
-    tracing::debug!("Building anchor for href: {:?}", effective_href);
 
     match effective_href {
         Some(href) => {

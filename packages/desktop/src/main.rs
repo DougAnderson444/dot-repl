@@ -1,4 +1,5 @@
 //! A desktop application built with Dioxus that features routing and a navbar.
+mod graphvism_wrapper;
 mod storage;
 
 mod error;
@@ -6,12 +7,14 @@ pub use error::Error;
 
 use dioxus::prelude::*;
 
-use ui::{Navbar, StorageProvider};
-use views::{Blog, GraphvizView, Home};
+use ui::{views::GraphView, GVizProvider, Navbar, StorageProvider};
+use views::{Blog, Home};
 
 mod views;
 
 use graphvizm::Graphvizm;
+
+const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -22,12 +25,9 @@ enum Route {
     #[route("/blog/:id")]
     Blog { id: i32 },
     /// Graphviz Route 
-    #[route("/graphviz/:encoded_dot")]
-    GraphvizView { encoded_dot: String },
+    #[route("/graphviz/:key_path")]
+    GraphView { key_path: String },
 }
-
-// global signal for the GViz context
-static GVIZ_CONTEXT: GlobalSignal<Option<Graphvizm>> = Signal::global(|| None);
 
 fn main() {
     dioxus::launch(App);
@@ -42,16 +42,23 @@ fn App() -> Element {
     // provide storage in context for all child elements
     use_context_provider(|| storage_provider);
 
+    // signal that will be saved to the context as None, until GViz is loaded
+    let gviz_signal = use_signal::<Option<GVizProvider>>(|| None);
+    let mut gviz_signal = use_context_provider(|| gviz_signal);
+
     // Create the Graphvizm instance once
     use_hook(|| {
         if let Ok(gviz) = Graphvizm::new() {
-            GVIZ_CONTEXT.signal().write().replace(gviz);
+            // set the signal
+            gviz_signal.set(Some(GVizProvider::new(
+                graphvism_wrapper::GraphvizmWrapper::from(gviz),
+            )));
         }
     });
 
     rsx! {
         // Global app resources
-        // document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
         Router::<Route> {}
     }

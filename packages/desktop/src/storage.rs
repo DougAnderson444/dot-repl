@@ -20,12 +20,19 @@ impl DesktopStorage {
         } else {
             ""
         };
-        let project_dirs = ProjectDirs::from("io", "peerpiper", &format!("vaiber{}", suffix))
-            .ok_or(Error::StorageFailure("Failed to get project directories"))?;
+        let project_dirs = ProjectDirs::from("io", "peerpiper", &format!("dot-repl{}", suffix))
+            .ok_or(Error::StorageFailure(
+                "Failed to get project directories".to_string(),
+            ))?;
 
         let data_dir = project_dirs.data_dir().to_path_buf();
 
-        std::fs::create_dir_all(&data_dir)?;
+        std::fs::create_dir_all(&data_dir).map_err(|err| {
+            Error::StorageFailure(format!(
+                "Failed to create data directory {:?}: {:?}",
+                data_dir, err
+            ))
+        })?;
 
         Ok(Self { data_dir })
     }

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{js_sys, Element};
@@ -37,5 +38,11 @@ impl GViz {
     pub fn render_dot(&self, dot: &str) -> String {
         let element = self.instance.render_svg_element(dot);
         element.outer_html()
+    }
+}
+
+impl ui::GraphVizable for GViz {
+    fn render_dot(&self, dot: &str) -> String {
+        self.render_dot(dot)
     }
 }

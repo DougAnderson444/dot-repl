@@ -1,0 +1,123 @@
+digraph "KitchenSink" {
+    // ---------- Global graph attributes ----------
+    graph [
+        rankdir=LR
+        bgcolor="#fdfdfd"
+        labelloc=top
+        label="Comprehensive Graphviz DOT Feature Demo"
+        fontname="Times"
+        fontsize=20
+        pencolor="#444444"
+        charset="UTF-8"
+    ];
+
+    // Default node attributes
+    node [
+        shape=ellipse
+        fontname="Helvetica"
+        fontsize=12
+        style=filled
+        fillcolor="#e8f4ff"
+        color="#336699"
+    ];
+
+    // Default edge attributes
+    edge [
+        color="#666666"
+        arrowsize=0.9
+        fontname="Helvetica"
+        fontsize=10
+    ];
+
+    // ---------- Rank constraints ----------
+    { rank = same; A1; A2; A3 }
+
+    // ---------- Simple nodes ----------
+    A1 [label="A1: internal link" URL="/blog/69"];
+    A2 [label="A2: tooltip" tooltip="I am a tooltip for A2"];
+    A3 [label="A3: hyperlink" URL="https://example.com/a3" target="_blank"];
+
+    // ---------- Record / ports node ----------
+    RecNode [shape=record label="{<p0> left | <p1> middle | <p2> right}" fillcolor="#ffeedd" color="#aa6633"];
+
+    // Edges using ports
+    A1 -> RecNode:p0 [label="to left" color="#cc3333"];
+    A2 -> RecNode:p1 [label="to middle" style=dashed];
+    A3 -> RecNode:p2 [label="to right" color="#33aa33" penwidth=2];
+
+    // ---------- HTML-like label ----------
+    HTMLNode [
+        shape=plaintext
+        label=<
+            <table border="0" cellborder="1" cellspacing="0" cellpadding="4">
+              <tr><td colspan="2"><b>HTML Label Node</b></td></tr>
+              <tr><td>Row 1</td><td>Data</td></tr>
+              <tr><td>Row 2</td><td bgcolor="#ffeeaa">Colored Cell</td></tr>
+            </table>
+        >
+        URL="https://example.com/htmlnode"
+        tooltip="Hover over the table"
+    ];
+
+    RecNode -> HTMLNode [label="record to html" color="#8833aa"];
+
+    // ---------- Cluster with nested subgraph ----------
+    subgraph cluster_Outer {
+        label="Outer Cluster"
+        style=rounded
+        color="#8888cc"
+        fontname="Helvetica"
+        fontsize=14
+        fillcolor="#f5f5ff"
+        tooltip="Outer cluster area"
+
+        // Nodes inside outer cluster
+        OC1 [label="OC1" fillcolor="#ddeeff" color="#446688"];
+        OC2 [label="OC2" fillcolor="#ddeeff" color="#446688" URL="https://example.com/oc2"];
+
+        // Nested cluster
+        subgraph cluster_Inner {
+            label="Inner Cluster"
+            style=dashed
+            color="#cc8888"
+            fillcolor="#fffafa"
+            IC1 [label="IC1" shape=box fillcolor="#fff2f2" color="#bb4444"];
+            IC2 [label="IC2" shape=box fillcolor="#fff2f2" color="#bb4444" peripheries=2];
+        }
+
+        // Edges inside cluster
+        OC1 -> IC1 [label="inside edge" color="#4444aa"];
+        OC2 -> IC2 [style=dotted constraint=false label="non-constraint"];
+        IC1 -> IC2 [label="flow" color="#aa4444"];
+    }
+
+    // ---------- Invisible edge (layout shaping) ----------
+    A3 -> OC1 [style=invis]; // influences layout without drawing
+
+    // ---------- Stroke/fill variations ----------
+    StyleNode1 [label="Bold Stroke" color="#000" penwidth=3 fillcolor="#fff5e6"];
+    StyleNode2 [label="MultiPeriphery" peripheries=3 shape=circle width=1.2 fillcolor="#eef" color="#003366"];
+
+    StyleNode1 -> StyleNode2 [label="thick edge" penwidth=2 color="#000000"];
+
+    // ---------- Edge with HTML-like label ----------
+    A2 -> HTMLNode [
+        label=<
+            <font color="#cc0000">HTML label edge<br/>line 2</font>
+        >
+        color="#cc0000"
+    ];
+
+    // ---------- Constraint false example connecting clusters ----------
+    IC2 -> StyleNode1 [style=dashed constraint=false label="cluster → outside"];
+
+    // ---------- Node with text-anchor-like effect (Graphviz: use 'xlabel') ----------
+    CenterNode [label="Center" xlabel="Extra below" shape=oval fillcolor="#eef9ff"];
+
+    HTMLNode -> CenterNode [label="to center" color="#3399cc"];
+
+    // ---------- Example of rank direction and additional edges ----------
+    CenterNode -> StyleNode2 [label="center to multi"];
+    RecNode -> CenterNode [color="#999999" style=dashed label="record to center"];
+}
+

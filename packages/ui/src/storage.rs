@@ -1,6 +1,10 @@
 //! This module defines the trait details for managing data.
 use std::sync::Arc;
 
+pub const STORAGE_KEY: &str = "kitchen_sink.dot";
+
+static KITCHEN_SINK: &str = include_str!("../assets/dot/kitchen_sink.dot");
+
 pub trait PlatformStorage: Send + Sync {
     fn save(&self, key: &str, data: &[u8]) -> Result<(), String>;
     fn load(&self, key: &str) -> Result<Vec<u8>, String>;
@@ -16,6 +20,10 @@ pub struct StorageProvider {
 
 impl StorageProvider {
     pub fn new<S: PlatformStorage + 'static>(storage: S) -> Self {
+        if !storage.exists(STORAGE_KEY) {
+            let _ = storage.save(STORAGE_KEY, KITCHEN_SINK.as_bytes());
+        }
+
         Self {
             inner: Arc::new(storage),
         }

@@ -10,4 +10,4 @@ ui = { workspace = true }
 [features]
 default = []
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server", "ui/server"]
+# server = ["dioxus/server", "ui/server"]

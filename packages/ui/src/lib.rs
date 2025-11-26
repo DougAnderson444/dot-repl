@@ -5,8 +5,8 @@ pub use hero::Hero;
 mod navbar;
 pub use navbar::Navbar;
 
-mod echo;
-pub use echo::Echo;
+// mod echo;
+// pub use echo::Echo;
 
 pub mod views;
 
@@ -14,3 +14,9 @@ pub mod components;
 
 mod storage;
 pub use storage::{PlatformStorage, StorageProvider};
+
+mod error;
+pub use error::Error;
+
+mod gviz;
+pub use gviz::{GVizProvider, GraphVizable};

@@ -1,3 +1,6 @@
+mod error;
+pub use error::Error;
+
 mod bindgen;
 use bindgen::GViz;
 
@@ -5,8 +8,8 @@ mod storage;
 
 use dioxus::prelude::*;
 
-use ui::{Navbar, StorageProvider};
-use views::{Blog, GraphvizView, Home};
+use ui::{views::GraphView, GVizProvider, Navbar, StorageProvider};
+use views::{Blog, Home};
 
 mod views;
 
@@ -24,15 +27,12 @@ enum Route {
     #[route("/blog/:id")]
     Blog { id: i32 },
     /// Graphviz Route 
-    #[route("/graphviz/:encoded_dot")]
-    GraphvizView { encoded_dot: String },
+    #[route("/graphviz/:key_path")]
+    GraphView { key_path: String },
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-
-// global signal for the GViz context
-static GVIZ_CONTEXT: GlobalSignal<Option<GViz>> = Signal::global(|| None);
 
 fn main() {
     dioxus::launch(App);
@@ -46,7 +46,12 @@ fn App() -> Element {
 
     // provide storgae in context for all child elements
     use_context_provider(|| storage_provider);
-    spawn(async {
+
+    // signal that will be saved to the context as None, until GViz is loaded
+    let gviz_signal = use_signal::<Option<GVizProvider>>(|| None);
+    let mut gviz_signal = use_context_provider(|| gviz_signal);
+
+    spawn(async move {
         // Wait for the viz_instance_promise to be loaded
         loop {
             if let Ok(val) = Reflect::get(
@@ -66,7 +71,9 @@ fn App() -> Element {
                 panic!("Failed to create GViz instance: {:?}", e);
             })
             .unwrap();
-        *GVIZ_CONTEXT.write() = Some(gviz);
+
+        let gviz_provider = GVizProvider::new(gviz);
+        gviz_signal.set(Some(gviz_provider));
     });
 
     rsx! {

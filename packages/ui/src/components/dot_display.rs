@@ -55,21 +55,6 @@ use dioxus::prelude::*;
 //     }
 // }
 
-#[component]
-pub fn SvgDisplay(svg: String) -> Element {
-    let svg_build_config = SvgBuildConfig::default();
-
-    rsx! {
-        div {
-            class: "w-full h-full overflow-auto",
-            GraphvizSvg {
-                svg_text: &svg,
-                config: svg_build_config
-            }
-        }
-    }
-}
-
 // // Example usage component with live editing
 // #[component]
 // pub fn GraphEditor() -> Element {

@@ -14,4 +14,4 @@ graphvizm = { path = "../../../../wasm/graphvizm/crates/graphvizm" }
 [features]
 default = ["desktop"]
 desktop = ["dioxus/desktop"]
-server = ["dioxus/server", "ui/server"]
+# server = ["dioxus/server", "ui/server"]

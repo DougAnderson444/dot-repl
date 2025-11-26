@@ -6230,7 +6230,6 @@ dependencies = [
 name = "ui"
 version = "0.1.0"
 dependencies = [
- "api",
  "base64",
  "dioxus",
  "euclid",
@@ -6238,6 +6237,7 @@ dependencies = [
  "num-traits",
  "roughr",
  "roxmltree",
+ "thiserror 2.0.17",
  "web-sys",
 ]
 
@@ -6927,6 +6927,7 @@ dependencies = [
  "getrandom 0.3.4",
  "gloo-storage",
  "gloo-timers",
+ "thiserror 2.0.17",
  "ui",
  "wasm-bindgen",
  "wasm-bindgen-futures",
