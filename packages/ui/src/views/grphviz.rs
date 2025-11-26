@@ -44,8 +44,8 @@ pub fn GraphView(key_path: String) -> Element {
     } else {
         return rsx! {
             div {
-                class: "text-red-500 p-4 text-center",
-                "Graphviz context unavailable."
+                class: "text-grey-500 p-4 text-center",
+                "Graphviz context loading..."
             }
         };
     }

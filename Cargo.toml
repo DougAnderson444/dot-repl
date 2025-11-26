@@ -3,7 +3,7 @@ resolver = "2"
 members = [
   "packages/ui",
   "packages/web",
-  "packages/desktop",
+  "packages/*",
   "packages/mobile",
   "packages/api",
 ]
