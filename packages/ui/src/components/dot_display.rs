@@ -3,6 +3,8 @@ mod render;
 pub use render::{GraphvizSvg, SvgBuildConfig};
 
 use dioxus::prelude::*;
+
+use crate::GVizProvider;
 // use graphvizm::Graphvizm;
 
 // read kitchen_sink.dot from assets
@@ -11,101 +13,37 @@ use dioxus::prelude::*;
 // const SIMPLE_DOT: Asset = asset!("/assets/simple.dot");
 // const SIMPLE_DOT: &str = include_str!("../../assets/simple.dot");
 
-// #[component]
-// pub fn DotDisplay(dot_source: ReadSignal<String>) -> Element {
-//     // Create the Graphvizm instance once
-//     let graphviz = use_hook(move || Graphvizm::new().ok());
-//
-//     // Reactively render SVG whenever dot_source signal changes
-//     let svg_result = use_memo(move || {
-//         graphviz
-//             .as_ref()
-//             .and_then(|g| g.render_dot(&dot_source()).ok())
-//     });
-//
-//     let svg_build_config = SvgBuildConfig::default();
-//
-//     rsx! {
-//         div {
-//             class: "w-full h-full overflow-auto",
-//
-//             match svg_result() {
-//                 Some(svg) => rsx! {
-//                     // Reference rendering
-//                     // div {
-//                     //     class: "mb-2 text-sm text-gray-600",
-//                     //     dangerous_inner_html: {svg}
-//                     // },
-//                     div {
-//                         class: "p-2",
-//                         GraphvizSvg {
-//                             svg_text: &svg,
-//                             config: svg_build_config
-//                         }
-//                     }
-//                 },
-//                 None => rsx! {
-//                     div {
-//                         class: "text-red-500 p-4 text-center",
-//                         "No graph to render."
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+#[component]
+pub fn DotDisplay(dot: String) -> Element {
+    let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
+    let maybe_gviz = gviz_signal.read();
+    if let Some(gviz) = maybe_gviz.as_ref() {
+        let svg = gviz.render_dot(&dot);
+        let svg_build_config = SvgBuildConfig {
+            // TODO: Toggle this
+            rough_style: true,
+            ..Default::default()
+        };
 
-// // Example usage component with live editing
-// #[component]
-// pub fn GraphEditor() -> Element {
-//     let mut dot_input = use_signal(|| {
-//         let kitchen = KITCHEN_SINK_DOT.to_string();
-//         kitchen
-//     });
-//
-//     rsx! {
-//         div {
-//             class: "grid grid-cols-1 md:grid-cols-2 gap-4 h-screen p-4 bg-gray-50",
-//
-//             div {
-//                 class: "flex flex-col space-y-4",
-//
-//                 h2 {
-//                     class: "text-2xl font-bold text-gray-800",
-//                     "DOT Source"
-//                 }
-//
-//                 textarea {
-//                     class: "flex-1 font-mono text-sm p-3 border border-gray-300 rounded-lg
-//                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-//                             resize-none bg-white shadow-sm",
-//                     rows: 10,
-//                     value: "{dot_input}",
-//                     oninput: move |e| dot_input.set(e.value()),
-//                     placeholder: "Enter your DOT graph here..."
-//                 }
-//             }
-//
-//             div {
-//                 class: "flex flex-col space-y-4",
-//
-//                 h2 {
-//                     class: "text-2xl font-bold text-gray-800",
-//                     "Preview"
-//                 }
-//
-//                 div {
-//                     class: "flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm",
-//                     DotDisplay {
-//                         dot_source: dot_input
-//                     }
-//                 }
-//
-//
-//             }
-//         }
-//     }
-// }
+        rsx! {
+            div {
+                class: "w-full h-full overflow-auto",
+                GraphvizSvg {
+                    svg_text: &svg,
+                    config: svg_build_config
+                }
+            }
+        }
+    } else {
+        return rsx! {
+            div {
+                class: "text-grey-500 p-4 text-center",
+                "Graphviz context loading..."
+            }
+        };
+    }
+}
+
 //
 // // Simple display-only component
 // #[component]

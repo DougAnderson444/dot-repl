@@ -87,7 +87,10 @@ fn App() -> Element {
             window.viz_instance = instance;
             "#
         }
-        Router::<Route> {}
+        div {
+            class: "h-screen flex flex-col",
+            Router::<Route> {}
+        }
     }
 }
 
