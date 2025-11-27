@@ -22,7 +22,7 @@ pub fn GraphEditor(dot_initial: String) -> Element {
                     div {
                         class: "flex flex-col flex-1 bg-gray-50 border-r border-gray-200 overflow-auto w-1/2 max-w-[800px]",
                         h2 {
-                            class: "text-xl font-bold text-gray-800 p-4 border-b border-gray-200 flex justify-between items-center",
+                            class: "text-xl font-bold text-gray-800 p-2 border-b border-gray-200 flex justify-between items-center",
                             "DOT Source"
                             button {
                                 class: "ml-2 px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded",
