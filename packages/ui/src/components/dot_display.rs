@@ -15,32 +15,67 @@ use crate::GVizProvider;
 
 #[component]
 pub fn DotDisplay(dot: String) -> Element {
+    let mut svg_signal = use_signal(|| None::<String>);
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
     let maybe_gviz = gviz_signal.read();
-    if let Some(gviz) = maybe_gviz.as_ref() {
-        let svg = gviz.render_dot(&dot);
-        let svg_build_config = SvgBuildConfig {
-            // TODO: Toggle this
-            rough_style: true,
-            ..Default::default()
-        };
 
-        rsx! {
-            div {
-                class: "w-full h-full overflow-auto",
-                GraphvizSvg {
-                    svg_text: &svg,
-                    config: svg_build_config
+    match maybe_gviz.as_ref() {
+        // Case 1: No gviz provider yet
+        None => {
+            rsx! {
+                div {
+                    class: "text-grey-500 p-4 text-center",
+                    "Graphviz context loading..."
                 }
             }
         }
-    } else {
-        return rsx! {
-            div {
-                class: "text-grey-500 p-4 text-center",
-                "Graphviz context loading..."
+        // Cases 2-4: We have gviz
+        Some(gviz) => {
+            // Case 2: Empty dot string
+            if dot.is_empty() {
+                return rsx! {
+                    div {
+                        class: "text-grey-500 p-4 text-center",
+                        "Enter DOT string"
+                    }
+                };
             }
-        };
+
+            // Case 3 & 4: Try to render, update signal if valid and different
+            if let Ok(rendered_svg) = gviz.render_dot(&dot) {
+                // Case 4: Valid render - update signal if different
+                if svg_signal.read().as_ref() != Some(&rendered_svg) {
+                    svg_signal.set(Some(rendered_svg));
+                }
+            }
+            // Case 3: Invalid render - signal keeps existing SVG (or None)
+
+            // Display current SVG if we have one
+            if let Some(svg) = svg_signal.read().as_ref() {
+                let svg_build_config = SvgBuildConfig {
+                    rough_style: true,
+                    ..Default::default()
+                };
+
+                rsx! {
+                    div {
+                        class: "w-full h-full overflow-auto",
+                        GraphvizSvg {
+                            svg_text: svg,
+                            config: svg_build_config
+                        }
+                    }
+                }
+            } else {
+                // No SVG yet (first render with invalid dot)
+                rsx! {
+                    div {
+                        class: "text-grey-500 p-4 text-center",
+                        "Invalid Graphviz syntax"
+                    }
+                }
+            }
+        }
     }
 }
 

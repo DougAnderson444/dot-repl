@@ -18,10 +18,10 @@ impl From<Graphvizm> for GraphvizmWrapper {
 }
 
 impl ui::GraphVizable for GraphvizmWrapper {
-    fn render_dot(&self, dot: &str) -> String {
-        match self.inner.render_dot(dot) {
-            Ok(svg) => svg,
-            Err(err) => format!("<svg><text x='10' y='20'>Error: {:?}</text></svg>", err),
-        }
+    type Error = ui::Error;
+    fn render_dot(&self, dot: &str) -> Result<String, Self::Error> {
+        self.inner
+            .render_dot(dot)
+            .map_err(|e| ui::Error::DotRenderError(e.to_string()))
     }
 }

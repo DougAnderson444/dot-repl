@@ -1,10 +1,7 @@
 use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use dioxus::prelude::*;
 
-use crate::{
-    components::{DotDisplay, GraphEditor, GraphvizSvg, SvgBuildConfig},
-    GVizProvider, StorageProvider,
-};
+use crate::{components::GraphEditor, StorageProvider};
 
 #[component]
 pub fn GraphView(key_path: String) -> Element {

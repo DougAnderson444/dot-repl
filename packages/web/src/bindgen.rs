@@ -1,3 +1,5 @@
+//! wasm bindings for viz.js
+//! viz.js is loaded int he main app as a Script tag, and exposes a global function `viz_instance`
 #![allow(dead_code)]
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
@@ -12,8 +14,8 @@ extern "C" {
 #[wasm_bindgen]
 extern "C" {
     type Viz;
-    #[wasm_bindgen(method, js_name = renderSVGElement)]
-    fn render_svg_element(this: &Viz, dot: &str) -> Element;
+    #[wasm_bindgen(method, js_name = renderSVGElement, catch)]
+    fn render_svg_element(this: &Viz, dot: &str) -> Result<Element, JsValue>;
 }
 
 pub struct GViz {
@@ -23,6 +25,12 @@ pub struct GViz {
 #[derive(Debug)]
 pub enum VizError {
     RenderError(String),
+}
+
+impl From<VizError> for ui::Error {
+    fn from(e: VizError) -> Self {
+        ui::Error::DotRenderError(format!("{:?}", e))
+    }
 }
 
 impl GViz {
@@ -35,14 +43,17 @@ impl GViz {
         Ok(Self { instance })
     }
 
-    pub fn render_dot(&self, dot: &str) -> String {
+    pub fn render_dot(&self, dot: &str) -> Result<String, VizError> {
         let element = self.instance.render_svg_element(dot);
-        element.outer_html()
+        element
+            .map(|el| el.outer_html())
+            .map_err(|e| VizError::RenderError(format!("Failed to render DOT: {:?}", e)))
     }
 }
 
 impl ui::GraphVizable for GViz {
-    fn render_dot(&self, dot: &str) -> String {
-        self.render_dot(dot)
+    type Error = ui::Error;
+    fn render_dot(&self, dot: &str) -> Result<String, Self::Error> {
+        self.render_dot(dot).map_err(ui::Error::from)
     }
 }

@@ -8,10 +8,7 @@ use crate::components::DotDisplay;
 pub fn GraphEditor(dot_initial: String) -> Element {
     let mut dot_input = use_signal(|| dot_initial);
     let mut collapsed = use_signal(|| false);
-
-    // Chat panel state
-    let mut chat_collapsed = use_signal(|| false);
-    let mut chat_input = use_signal(|| String::new());
+    let mut chat_input = use_signal(String::new);
 
     rsx! {
             div {
@@ -53,9 +50,9 @@ pub fn GraphEditor(dot_initial: String) -> Element {
 
                 // Right panel: Preview + Chat
     div {
-        class: "flex flex-col bg-white overflow-auto flex-1", // removed 'relative'
+        class: "flex flex-col bg-white overflow-auto flex-1",
         div {
-            class: "flex-1 bg-white overflow-scroll",
+            class: "flex-1 bg-white overflow-auto",
             DotDisplay {
                 dot: dot_input()
             }

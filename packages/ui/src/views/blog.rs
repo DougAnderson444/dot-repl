@@ -1,14 +1,11 @@
 use dioxus::prelude::*;
 
-const BLOG_CSS: Asset = asset!("/assets/styling/blog.css");
-
 #[component]
 pub fn BlogView<R>(id: i32, prev: R, next: R) -> Element
 where
     R: Routable + Clone + PartialEq,
 {
     rsx! {
-        document::Link { rel: "stylesheet", href: BLOG_CSS}
 
         div {
             id: "blog",
@@ -18,14 +15,20 @@ where
             p { "In blog #{id}, we show how the Dioxus router works and how URL parameters can be passed as props to our route components." }
 
             // Navigation links
-            Link {
-                to: prev,
-                "Previous"
+            span {
+                Link {
+                    to: prev,
+                    class: "mr-4 bg-green-200 rounded-md px-3 py-1 hover:bg-sky-300",
+                    "Previous"
+                }
             }
             span { " <---> " }
-            Link {
-                to: next,
-                "Next"
+            span {
+                class: "mr-4 bg-sky-300 rounded-md px-3 py-1 hover:bg-sky-500",
+                Link {
+                    to: next,
+                    "Next"
+                }
             }
         }
     }

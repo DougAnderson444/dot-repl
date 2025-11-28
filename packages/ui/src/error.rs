@@ -10,4 +10,8 @@ pub enum Error {
     /// Generic I/O error
     #[error("I/O error: {0}")]
     Io(String),
+
+    /// DOT Render error
+    #[error("DOT Render error: {0}")]
+    DotRenderError(String),
 }

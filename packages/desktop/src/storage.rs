@@ -37,10 +37,10 @@ impl DesktopStorage {
         Ok(Self { data_dir })
     }
 
-    /// Returns the directory where the wallet data is stored.
-    pub fn dir(&self) -> PathBuf {
-        self.data_dir.clone()
-    }
+    // /// Returns the directory where the wallet data is stored.
+    // pub fn dir(&self) -> PathBuf {
+    //     self.data_dir.clone()
+    // }
 }
 
 impl PlatformStorage for DesktopStorage {
