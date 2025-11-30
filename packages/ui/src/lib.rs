@@ -15,7 +15,7 @@ pub mod components;
 mod storage;
 pub use storage::{PlatformStorage, StorageProvider};
 
-mod error;
+pub mod error;
 pub use error::Error;
 
 mod gviz;

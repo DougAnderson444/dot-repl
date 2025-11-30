@@ -4,6 +4,7 @@ pub use render::{GraphvizSvg, SvgBuildConfig};
 
 use dioxus::prelude::*;
 
+use crate::error::RenderError;
 use crate::GVizProvider;
 // use graphvizm::Graphvizm;
 
@@ -14,7 +15,7 @@ use crate::GVizProvider;
 // const SIMPLE_DOT: &str = include_str!("../../assets/simple.dot");
 
 #[component]
-pub fn DotDisplay(dot: String) -> Element {
+pub fn DotDisplay(dot: String, error_signal: Signal<Option<RenderError>>) -> Element {
     let mut svg_signal = use_signal(|| None::<String>);
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
     let maybe_gviz = gviz_signal.read();
@@ -33,6 +34,10 @@ pub fn DotDisplay(dot: String) -> Element {
         Some(gviz) => {
             // Case 2: Empty dot string
             if dot.is_empty() {
+                // Clear error when input is empty
+                if error_signal.read().is_some() {
+                    error_signal.set(None);
+                }
                 return rsx! {
                     div {
                         class: "text-grey-500 p-4 text-center",
@@ -42,18 +47,36 @@ pub fn DotDisplay(dot: String) -> Element {
             }
 
             // Case 3 & 4: Try to render, update signal if valid and different
-            if let Ok(rendered_svg) = gviz.render_dot(&dot) {
-                // Case 4: Valid render - update signal if different
-                if svg_signal.read().as_ref() != Some(&rendered_svg) {
-                    svg_signal.set(Some(rendered_svg));
+            match gviz.render_dot(&dot) {
+                Ok(rendered_svg) => {
+                    // Clear any previous errors
+                    if error_signal.read().is_some() {
+                        error_signal.set(None);
+                    }
+
+                    // Case 4: Valid render - update signal if different
+                    if svg_signal.read().as_ref() != Some(&rendered_svg) {
+                        svg_signal.set(Some(rendered_svg));
+                    }
+                }
+                Err(e) => {
+                    // Update error signal with render error
+                    match e {
+                        crate::Error::DotRenderError(render_error) => {
+                            error_signal.set(Some(render_error));
+                        }
+                        _ => {
+                            // For other error types, we don't have line info
+                            // but we could still clear the error signal
+                        }
+                    }
                 }
             }
-            // Case 3: Invalid render - signal keeps existing SVG (or None)
 
             // Display current SVG if we have one
             if let Some(svg) = svg_signal.read().as_ref() {
                 let svg_build_config = SvgBuildConfig {
-                    rough_style: true,
+                    rough_style: false,
                     ..Default::default()
                 };
 

@@ -1,7 +1,8 @@
 //! The REPL (Read-Eval-Print Loop) component for the UI.
 use dioxus::prelude::*;
 
-use crate::components::DotDisplay;
+use crate::components::{CodeEditor, DotDisplay, ErrorOverlay};
+use crate::error::RenderError;
 
 // Example usage component with live editing
 #[component]
@@ -9,6 +10,19 @@ pub fn GraphEditor(dot_initial: String) -> Element {
     let mut dot_input = use_signal(|| dot_initial);
     let mut collapsed = use_signal(|| false);
     let mut chat_input = use_signal(String::new);
+    let render_errors = use_signal(|| None::<RenderError>);
+
+    // Calculate which lines have errors
+    let error_lines = use_memo(move || {
+        render_errors()
+            .map(|err| {
+                err.errors
+                    .iter()
+                    .filter_map(|e| e.line)
+                    .collect::<Vec<u32>>()
+            })
+            .unwrap_or_default()
+    });
 
     rsx! {
             div {
@@ -27,11 +41,11 @@ pub fn GraphEditor(dot_initial: String) -> Element {
                                 "⟨⟨⟨⟨"
                             }
                         }
-                        textarea {
-                            class: "flex-1 font-mono text-sm p-4 border-none outline-none resize-none bg-white overflow-auto",
-                            value: "{dot_input}",
-                            oninput: move |e| dot_input.set(e.value()),
-                            placeholder: "Enter your DOT graph here..."
+                        CodeEditor {
+                            value: dot_input(),
+                            oninput: move |new_value: String| dot_input.set(new_value),
+                            error_lines: error_lines(),
+                            placeholder: "Enter your DOT graph here...".to_string()
                         }
                     }
                 } else {
@@ -50,11 +64,18 @@ pub fn GraphEditor(dot_initial: String) -> Element {
 
                 // Right panel: Preview + Chat
     div {
-        class: "flex flex-col bg-white overflow-auto flex-1",
+        class: "flex flex-col bg-white overflow-auto flex-1 relative",
+
+        // Error overlay
+        ErrorOverlay {
+            errors: render_errors
+        }
+
         div {
             class: "flex-1 bg-white overflow-auto",
             DotDisplay {
-                dot: dot_input()
+                dot: dot_input(),
+                error_signal: render_errors
             }
         }
         // Chat panel sits at the bottom, not absolute

@@ -24,12 +24,22 @@ pub struct GViz {
 
 #[derive(Debug)]
 pub enum VizError {
-    RenderError(String),
+    RenderError { message: String, line: Option<u32> },
 }
 
 impl From<VizError> for ui::Error {
     fn from(e: VizError) -> Self {
-        ui::Error::DotRenderError(format!("{:?}", e))
+        match e {
+            VizError::RenderError { message, line } => {
+                ui::Error::DotRenderError(ui::error::RenderError {
+                    errors: vec![ui::error::ErrorInfo {
+                        level: ui::error::ErrorLevel::Error,
+                        message,
+                        line,
+                    }],
+                })
+            }
+        }
     }
 }
 
@@ -37,7 +47,10 @@ impl GViz {
     pub async fn new() -> Result<Self, VizError> {
         let promise = viz_instance();
         let js_instance = JsFuture::from(promise).await.map_err(|e| {
-            VizError::RenderError(format!("Failed to create Viz instance: {:?}", e))
+            VizError::RenderError {
+                message: format!("Failed to create Viz instance: {:?}", e),
+                line: None,
+            }
         })?;
         let instance: Viz = js_instance.into();
         Ok(Self { instance })
@@ -47,8 +60,36 @@ impl GViz {
         let element = self.instance.render_svg_element(dot);
         element
             .map(|el| el.outer_html())
-            .map_err(|e| VizError::RenderError(format!("Failed to render DOT: {:?}", e)))
+            .map_err(|e| {
+                // Extract clean error message from JavaScript Error object
+                let message = if let Some(err) = e.dyn_ref::<js_sys::Error>() {
+                    err.message().as_string().unwrap_or_else(|| format!("{:?}", e))
+                } else {
+                    format!("{:?}", e)
+                };
+                
+                // Extract line number from message (e.g., "syntax error in line 3")
+                let line = extract_line_number(&message);
+                
+                VizError::RenderError { message, line }
+            })
     }
+}
+
+/// Extract line number from error message
+fn extract_line_number(msg: &str) -> Option<u32> {
+    // Look for "line" followed by digits
+    msg.find("line")
+        .and_then(|pos| {
+            let after = &msg[pos + 4..];
+            after
+                .chars()
+                .skip_while(|c| !c.is_ascii_digit())
+                .take_while(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse::<u32>()
+                .ok()
+        })
 }
 
 impl ui::GraphVizable for GViz {
