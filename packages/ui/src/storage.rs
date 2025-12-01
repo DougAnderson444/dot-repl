@@ -1,7 +1,7 @@
 //! This module defines the trait details for managing data.
 use std::sync::Arc;
 
-pub const STORAGE_KEY: &str = "kitchen_sink.dot";
+pub const KITCHEN_SINK_STORAGE_KEY: &str = "kitchen_sink.dot";
 
 static KITCHEN_SINK: &str = include_str!("../assets/dot/kitchen_sink.dot");
 
@@ -20,8 +20,8 @@ pub struct StorageProvider {
 
 impl StorageProvider {
     pub fn new<S: PlatformStorage + 'static>(storage: S) -> Self {
-        if !storage.exists(STORAGE_KEY) {
-            let _ = storage.save(STORAGE_KEY, KITCHEN_SINK.as_bytes());
+        if !storage.exists(KITCHEN_SINK_STORAGE_KEY) {
+            let _ = storage.save(KITCHEN_SINK_STORAGE_KEY, KITCHEN_SINK.as_bytes());
         }
 
         Self {
