@@ -1,3 +1,4 @@
+//! Web-specific entry point
 mod error;
 pub use error::Error;
 

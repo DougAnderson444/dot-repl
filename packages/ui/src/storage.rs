@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 pub const KITCHEN_SINK_STORAGE_KEY: &str = "kitchen_sink.dot";
 
-static KITCHEN_SINK: &str = include_str!("../assets/dot/kitchen_sink.dot");
+// static KITCHEN_SINK: &str = include_str!("../assets/dot/kitchen_sink.dot");
 
 pub trait PlatformStorage: Send + Sync {
     fn save(&self, key: &str, data: &[u8]) -> Result<(), String>;

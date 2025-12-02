@@ -22,6 +22,11 @@ web-sys = { version = "0.3", features = ["Window", "Document", "Element"] }
 # We have netsed deps that use v0.2, so we need to ensure the feature is flagged here
 getrandom_v02 = { package = "getrandom", version = "0.2.15", features = ["js"] }
 web-sys = { workspace = true }
+gloo-timers = { version = "0.2", features = ["futures"] }
+wasm-bindgen-futures = "0.4"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["full"] }
 
 [features]
 default = ["rough"]

@@ -7,8 +7,8 @@ pub use error::Error;
 
 use dioxus::prelude::*;
 
-use ui::{views::GraphView, GVizProvider, Navbar, StorageProvider};
-use views::{Blog, Home};
+use ui::{GVizProvider, Navbar, StorageProvider};
+use views::{Blog, GraphVizDesktopView, Home};
 
 mod views;
 
@@ -25,8 +25,8 @@ enum Route {
     #[route("/blog/:id")]
     Blog { id: i32 },
     /// Graphviz Route 
-    #[route("/graphviz/:key_path")]
-    GraphView { key_path: String },
+    #[route("/:key_path")]
+    GraphVizDesktopView { key_path: String },
 }
 
 fn main() {
@@ -60,7 +60,10 @@ fn App() -> Element {
         // Global app resources
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
 
-        Router::<Route> {}
+        div {
+            class: "h-screen flex flex-col",
+            Router::<Route> {}
+        }
     }
 }
 

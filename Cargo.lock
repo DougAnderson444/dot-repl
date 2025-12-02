@@ -1884,7 +1884,7 @@ dependencies = [
  "futures-channel",
  "futures-util",
  "generational-box",
- "gloo-timers",
+ "gloo-timers 0.3.0",
  "js-sys",
  "lazy-js-bundle",
  "rustc-hash 2.1.1",
@@ -2760,6 +2760,18 @@ dependencies = [
  "thiserror 1.0.69",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "gloo-timers"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b995a66bb87bebce9a0f4a95aed01daca4872c050bfcb21653361c03bc35e5c"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -6019,6 +6031,7 @@ dependencies = [
  "bytes",
  "libc",
  "mio",
+ "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2 0.6.1",
@@ -6414,12 +6427,15 @@ dependencies = [
  "dioxus-router",
  "euclid",
  "getrandom 0.2.16",
+ "gloo-timers 0.2.6",
  "num-traits",
  "reqwest 0.11.27",
  "roughr",
  "roxmltree",
  "thiserror 2.0.17",
+ "tokio",
  "url-escape",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
@@ -7117,7 +7133,7 @@ dependencies = [
  "dioxus",
  "getrandom 0.3.4",
  "gloo-storage",
- "gloo-timers",
+ "gloo-timers 0.3.0",
  "thiserror 2.0.17",
  "ui",
  "url-escape",

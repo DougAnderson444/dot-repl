@@ -1,0 +1,14 @@
+use crate::Route;
+use dioxus::prelude::*;
+use ui::views::GraphView;
+
+/// GraphView is generic over R, but we need to set R to route here as it's only
+/// used in the top level.
+#[component]
+pub fn GraphVizDesktopView(key_path: String) -> Element {
+    let route = use_route::<Route>();
+
+    rsx! {
+        GraphView { route, key_path }
+    }
+}

@@ -20,3 +20,6 @@ pub use error::Error;
 
 mod gviz;
 pub use gviz::{GVizProvider, GraphVizable};
+
+/// Platform specific utilities
+mod platform;
