@@ -13,6 +13,7 @@ gloo-timers = { version = "0.3", features = ["futures"] }
 base64.workspace = true
 gloo-storage = "0.3.0"
 thiserror.workspace = true
+url-escape = "0.1.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.3", features = ["wasm_js"] }

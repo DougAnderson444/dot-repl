@@ -11,7 +11,7 @@ pub fn Hero() -> Element {
             // img { src: HEADER_SVG, id: "header" }
             div { id: "links",
                 Link {
-                    to: "/graphviz/{encoded_dot}",
+                    to: "/{encoded_dot}",
                     "🖼️ The Kitchen Sink Graph"
                 }
             }

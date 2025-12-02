@@ -36,7 +36,6 @@ digraph "KitchenSink" {
     A1 [label="A1: internal link", URL="/blog/69"];
     A2 [label="A2: tooltip", tooltip="I am a tooltip for A2"];
     A3 [label="A3: hyperlink", URL="https://example.com/a3", target="_blank"];
-    A4 [label="A4: Graph reroute internal link", URL="/managers_template.dot"];
 
     // ---------- Record / ports node ----------
     RecNode [shape=record, label="{<p0> left | <p1> middle | <p2> right}", fillcolor="#ffeedd", color="#aa6633"];

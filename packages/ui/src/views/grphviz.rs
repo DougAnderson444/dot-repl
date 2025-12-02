@@ -20,20 +20,28 @@ use dioxus::prelude::*;
 use crate::{components::GraphEditor, StorageProvider};
 
 #[component]
-pub fn GraphView(key_path: String) -> Element {
+pub fn GraphView<R>(key_path: R) -> Element
+where
+    R: Routable + Clone + PartialEq,
+{
     let storage = use_context::<StorageProvider>();
 
-    let out: &mut String = &mut String::new();
-    let dot_key = url_escape::decode_to_string(&key_path, out);
+    let p = key_path.to_string();
+    let decoded = url_escape::decode(&p);
 
-    trace!("GraphView rendering for key_path: {}", dot_key);
+    info!("GraphView rendering for key_path: {}", decoded);
+
+    // trim leading `/` if present
+    let trimmed = decoded.trim_start_matches('/').to_string();
 
     let dot = storage
-        .load(dot_key)
+        .load(&trimmed)
         .map(|data| String::from_utf8_lossy(&data).to_string())
         .unwrap_or_else(|_| "digraph { file -> not_found; }".to_string());
 
+    info!("Loaded DOT data: {}", dot);
+
     rsx! {
-        GraphEditor { dot_initial: dot }
+        GraphEditor { dot_input }
     }
 }

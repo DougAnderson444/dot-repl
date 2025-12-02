@@ -6,8 +6,7 @@ use crate::error::RenderError;
 
 // Example usage component with live editing
 #[component]
-pub fn GraphEditor(dot_initial: String) -> Element {
-    let mut dot_input = use_signal(|| dot_initial);
+pub fn GraphEditor(dot_input: Signal<String>) -> Element {
     let mut collapsed = use_signal(|| false);
     let mut chat_input = use_signal(String::new);
     let render_errors = use_signal(|| None::<RenderError>);

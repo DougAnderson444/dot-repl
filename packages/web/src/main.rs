@@ -8,8 +8,8 @@ mod storage;
 
 use dioxus::prelude::*;
 
-use ui::{views::GraphView, GVizProvider, Navbar, StorageProvider};
-use views::{Blog, Home};
+use ui::{GVizProvider, Navbar, StorageProvider};
+use views::{Blog, GraphVizWebView, Home};
 
 mod views;
 
@@ -27,8 +27,8 @@ enum Route {
     #[route("/blog/:id")]
     Blog { id: i32 },
     /// Graphviz Route 
-    #[route("/graphviz/:key_path")]
-    GraphView { key_path: String },
+    #[route("/:key_path")]
+    GraphVizWebView { key_path: String },
 }
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
