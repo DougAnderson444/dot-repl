@@ -2813,6 +2813,7 @@ dependencies = [
 [[package]]
 name = "graphvizm"
 version = "0.1.0"
+source = "git+https://github.com/DougAnderson444/graphvism.git?branch=main#30b6b4503e37e883acb2e5dcb255c12109b47d42"
 dependencies = [
  "anyhow",
  "thiserror 1.0.69",

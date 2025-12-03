@@ -9,7 +9,7 @@ ui = { workspace = true, features = ["desktop"] }
 base64.workspace = true
 directories.workspace = true
 thiserror.workspace = true
-graphvizm = { path = "../../../../wasm/graphvizm/crates/graphvizm" }
+graphvizm = { git = "https://github.com/DougAnderson444/graphvism.git", branch = "main" }
 
 [features]
 default = ["desktop"]
