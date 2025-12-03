@@ -16,16 +16,16 @@ jobs:
       - name: Binstall dioxus-cli ver 6
         run: cargo binstall --no-confirm dioxus-cli@0.7.1
         
-        - name: Install just
-          run: cargo binstall --no-confirm just
+      - name: Install just
+        run: cargo binstall --no-confirm just
 
-        - name: Install Tailwind CSS standalone binary
-          run: just install-tailwind
-          working-directory: packages/web
+      - name: Install Tailwind CSS standalone binary
+        run: just install-tailwind
+        working-directory: packages/web
 
-        - name: Build web app (CSS + bundle)
-          run: just ci-build
-          working-directory: packages/web
+      - name: Build web app (CSS + bundle)
+        run: just ci-build
+        working-directory: packages/web
 
       - name: Copy files to root ./docs directory
         run: |
