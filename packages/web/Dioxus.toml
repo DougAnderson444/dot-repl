@@ -7,6 +7,7 @@ name = "Dot REPL"
 public_dir = "public"
 
 [web.app]
+base_path = "dot-repl"
 
 # HTML title tag content
 title = "Dot REPL"
