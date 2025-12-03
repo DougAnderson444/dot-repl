@@ -27,6 +27,9 @@ jobs:
         run: just ci-build
         working-directory: packages/web
 
+      - name: Create docs directory
+        run: mkdir -p docs/
+
       - name: Copy files to root ./docs directory
         run: |
           cp -r packages/web/docs/public/* docs/
