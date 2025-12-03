@@ -21,7 +21,9 @@ jobs:
 
       - name: Install Tailwind CSS standalone binary
         run: just install-tailwind
-        working-directory: packages/web
+
+      - name: Build Tailwind CSS
+        run: tailwindcss -i ./tailwind.css -o ./packages/web/assets/tailwind.css
 
       - name: Build web app (CSS + bundle)
         run: just ci-build
@@ -33,7 +35,7 @@ jobs:
       - name: Copy files to root ./docs directory
         run: |
           cp -r packages/web/docs/public/* docs/
-          cp packages/web/docs/index.html docs/404.html
+          cp docs/index.html docs/404.html
           
       - name: Upload static files as artifact
         id: deployment

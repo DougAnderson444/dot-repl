@@ -2,8 +2,8 @@
 module.exports = {
   mode: "all",
   content: [
-    "../ui/src/**/*.{rs,html,css}",
-    "../desktop/src/**/*.{rs,html,css}",
+    "../../packages/ui/src/**/*.{rs,html,css}",
+    "./src/**/*.{rs,html,css}",
   ],
   theme: {
     extend: {},
