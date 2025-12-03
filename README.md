@@ -1,3 +1,7 @@
+# DOT Repl workspace
+
+A dioxus workspace with web and desktop targets, enabling you to save DOT files in the Desktop and push them to the web for viewing.
+
 # Development
 
 Your new workspace contains a member crate for each of the web, desktop and mobile platforms, a `ui` crate for shared components and a `api` crate for shared backend logic:
