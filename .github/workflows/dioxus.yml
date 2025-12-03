@@ -29,8 +29,8 @@ jobs:
 
       - name: Copy files to root ./docs directory
         run: |
-          cp -r docs/public/* docs/
-          cp docs/index.html docs/404.html
+          cp -r packages/web/docs/public/* docs/
+          cp packages/web/docs/index.html docs/404.html
           
       - name: Upload static files as artifact
         id: deployment
