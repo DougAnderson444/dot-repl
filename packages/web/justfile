@@ -4,9 +4,9 @@ install-tailwind:
   chmod +x tailwindcss-linux-x64
   sudo mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
 
-# Build CSS for production (no watch)
-build-css:
-  tailwindcss -i ./tailwind.css -o ./assets/tailwind.css
+# # Build CSS for production (no watch)
+# build-css:
+#   tailwindcss -i ./tailwind.css -o ./assets/tailwind.css
 
 # Build CSS with watch for development
 watch-css:
@@ -15,9 +15,6 @@ watch-css:
 # Build the web app
 build:
   dx bundle --out-dir docs
-
-# Full CI build (CSS + web app)
-ci-build: build-css build
 
 serve:
   dx serve

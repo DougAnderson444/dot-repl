@@ -26,7 +26,7 @@ jobs:
         run: tailwindcss -i ./tailwind.css -o ./packages/web/assets/tailwind.css
 
       - name: Build web app (CSS + bundle)
-        run: just ci-build
+        run: just build
         working-directory: packages/web
 
       - name: Create docs directory
