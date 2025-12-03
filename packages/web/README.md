@@ -1,5 +1,11 @@
 # Development
 
+Run the [just](https://just.systems/) command below to build the entire workspace including all platform crates and shared crates:
+
+```sh 
+just ci-build
+```
+
 The web crate defines the entrypoint for the web app along with any assets, components and dependencies that are specific to web builds. The web crate starts out something like this:
 
 ```

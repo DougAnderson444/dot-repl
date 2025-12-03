@@ -1,5 +1,23 @@
-css:
+# Install Tailwind CSS standalone binary
+install-tailwind:
+  curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.17/tailwindcss-linux-x64
+  chmod +x tailwindcss-linux-x64
+  sudo mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
+
+# Build CSS for production (no watch)
+build-css:
+  tailwindcss -i ./tailwind.css -o ./assets/tailwind.css
+
+# Build CSS with watch for development
+watch-css:
   tailwindcss -i ./tailwind.css -o ./assets/tailwind.css --watch
+
+# Build the web app
+build:
+  dx bundle --out-dir docs
+
+# Full CI build (CSS + web app)
+ci-build: build-css build
 
 serve:
   dx serve
