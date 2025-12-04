@@ -3,8 +3,6 @@ css:
 
 css-desktop:
   tailwindcss -i ./tailwind.css -o ./packages/desktop/assets/tailwind.css --watch
-serve:
-  dx serve
 
 install-tailwind:
   curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.17/tailwindcss-linux-x64
