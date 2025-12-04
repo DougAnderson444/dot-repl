@@ -6,16 +6,13 @@ use dioxus::prelude::*;
 
 use crate::error::RenderError;
 use crate::GVizProvider;
-// use graphvizm::Graphvizm;
-
-// read kitchen_sink.dot from assets
-// const KITCHEN_SINK_DOT: Asset = asset!("/assets/kitchen_sink.dot");
-// const KITCHEN_SINK_DOT: &str = include_str!("../../assets/kitchen_sink.dot");
-// const SIMPLE_DOT: Asset = asset!("/assets/simple.dot");
-// const SIMPLE_DOT: &str = include_str!("../../assets/simple.dot");
 
 #[component]
-pub fn DotDisplay(dot: String, error_signal: Signal<Option<RenderError>>) -> Element {
+pub fn DotDisplay(
+    dot: String,
+    error_signal: Signal<Option<RenderError>>,
+    rough_enabled: Signal<bool>,
+) -> Element {
     let mut svg_signal = use_signal(|| None::<String>);
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
     let maybe_gviz = gviz_signal.read();
@@ -75,17 +72,20 @@ pub fn DotDisplay(dot: String, error_signal: Signal<Option<RenderError>>) -> Ele
 
             // Display current SVG if we have one
             if let Some(svg) = svg_signal.read().as_ref() {
-                let svg_build_config = SvgBuildConfig {
-                    rough_style: false,
+                let rough = rough_enabled();
+                let config = SvgBuildConfig {
+                    rough_style: rough,
                     ..Default::default()
                 };
+                let key = format!("svg-{}", rough);
 
                 rsx! {
                     div {
                         class: "w-full h-full overflow-auto",
                         GraphvizSvg {
+                            key: key,
                             svg_text: svg,
-                            config: svg_build_config
+                            config: config
                         }
                     }
                 }

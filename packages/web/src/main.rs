@@ -52,6 +52,10 @@ fn App() -> Element {
     let gviz_signal = use_signal::<Option<GVizProvider>>(|| None);
     let mut gviz_signal = use_context_provider(|| gviz_signal);
 
+    // Global rough_enabled state that persists across navigation
+    let rough_enabled = use_signal(|| false);
+    use_context_provider(|| rough_enabled);
+
     spawn(async move {
         // Wait for the viz_instance_promise to be loaded
         loop {

@@ -8,6 +8,8 @@ use crate::error::RenderError;
 #[component]
 pub fn GraphEditor(dot_input: Signal<String>) -> Element {
     let mut collapsed = use_signal(|| false);
+    // Use global rough_enabled state from context instead of local state
+    let mut rough_enabled = use_context::<Signal<bool>>();
     let mut chat_input = use_signal(String::new);
     let render_errors = use_signal(|| None::<RenderError>);
 
@@ -61,10 +63,24 @@ pub fn GraphEditor(dot_input: Signal<String>) -> Element {
                     }
                 }
 
-                // Right panel: Preview + Chat
+    // Right panel: Preview + Chat
     div {
         class: "flex flex-col bg-white overflow-auto flex-1 relative",
-
+        div {
+            class: "flex items-center justify-between px-4 py-2 bg-gray-50 border-b",
+            span { class: "text-sm font-medium", "Preview" }
+            label {
+                class: "flex items-center gap-2 text-sm",
+                input {
+                    r#type: "checkbox",
+                    checked: rough_enabled(),
+                    onchange: move |_| {
+                        rough_enabled.toggle()
+                    },
+                }
+                "Rough Style"
+            }
+        }
         // Error overlay
         ErrorOverlay {
             errors: render_errors
@@ -74,7 +90,8 @@ pub fn GraphEditor(dot_input: Signal<String>) -> Element {
             class: "flex-1 bg-white overflow-auto",
             DotDisplay {
                 dot: dot_input(),
-                error_signal: render_errors
+                error_signal: render_errors,
+                rough_enabled: rough_enabled,
             }
         }
         // Chat panel sits at the bottom, not absolute

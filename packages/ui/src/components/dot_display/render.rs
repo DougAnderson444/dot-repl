@@ -73,9 +73,12 @@ impl Default for RoughOptions {
 }
 
 impl PartialEq for SvgBuildConfig {
-    fn eq(&self, _other: &Self) -> bool {
-        // force re-render only on SVG text changes; config equality coarse-grained
-        true
+    fn eq(&self, other: &Self) -> bool {
+        // Compare the fields that should trigger a re-render
+        self.rough_style == other.rough_style
+            && self.strip_doctype == other.strip_doctype
+            && self.rough_options == other.rough_options
+            && self.rough_use_custom_font == other.rough_use_custom_font
     }
 }
 
