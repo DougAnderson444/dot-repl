@@ -77,7 +77,6 @@ pub fn DotDisplay(
                     rough_style: rough,
                     ..Default::default()
                 };
-                let key = format!("svg-{}", rough);
 
                 rsx! {
                     div {

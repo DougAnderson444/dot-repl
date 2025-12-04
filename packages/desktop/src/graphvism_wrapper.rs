@@ -1,5 +1,5 @@
 //! Wrapper around Graphvizm so we can implement the ui::GraphVizable trait
-use graphvizm::{Graphvizm, GraphvizmError};
+use graphvizm::{ErrorLevel, Graphvizm, GraphvizmError};
 
 pub struct GraphvizmWrapper {
     inner: Graphvizm,
@@ -28,9 +28,9 @@ impl ui::GraphVizable for GraphvizmWrapper {
                         .into_iter()
                         .map(|err_info| ui::error::ErrorInfo {
                             level: match err_info.level {
-                                graphvizm::ErrorLevel::Info => ui::error::ErrorLevel::Info,
-                                graphvizm::ErrorLevel::Warning => ui::error::ErrorLevel::Warning,
-                                graphvizm::ErrorLevel::Error => ui::error::ErrorLevel::Error,
+                                ErrorLevel::Info => ui::error::ErrorLevel::Info,
+                                ErrorLevel::Warning => ui::error::ErrorLevel::Warning,
+                                ErrorLevel::Error => ui::error::ErrorLevel::Error,
                             },
                             message: err_info.message,
                             line: err_info.line,
@@ -39,7 +39,9 @@ impl ui::GraphVizable for GraphvizmWrapper {
                 };
                 ui::Error::DotRenderError(render_e)
             }
-            _ => unreachable!(),
+            GraphvizmError::Wasmtime(e) => ui::Error::Io(e.to_string()),
+            GraphvizmError::EngineInit(s) => ui::Error::Io(s),
+            GraphvizmError::WasmRead(e) => ui::Error::Io(e.to_string()),
         })
     }
 }

@@ -39,6 +39,7 @@ pub struct SvgBuildConfig {
     pub on_title: Option<fn(&str)>,
     pub strip_doctype: bool,
     pub rough_style: bool,
+    pub scale_to_fit: bool,
     pub rough_options: RoughOptions,
     pub rough_use_custom_font: bool,
     pub rough_embed_font_data: Option<&'static str>,
@@ -77,6 +78,7 @@ impl PartialEq for SvgBuildConfig {
         // Compare the fields that should trigger a re-render
         self.rough_style == other.rough_style
             && self.strip_doctype == other.strip_doctype
+            && self.scale_to_fit == other.scale_to_fit
             && self.rough_options == other.rough_options
             && self.rough_use_custom_font == other.rough_use_custom_font
     }
@@ -103,6 +105,7 @@ impl Default for SvgBuildConfig {
             on_title: None,
             strip_doctype: true,
             rough_style: true,
+            scale_to_fit: false,
             rough_options: RoughOptions::default(),
             rough_use_custom_font: true,
             rough_embed_font_data: None,
@@ -639,12 +642,18 @@ svg, text, tspan {
 
     let el = match tag {
         "svg" => {
+            let (width, height) = if cfg.scale_to_fit {
+                (Some("100%".to_string()), Some("100%".to_string()))
+            } else {
+                (attrs.width, attrs.height)
+            };
+
             rsx! {
                 svg {
                     id: attrs.id,
                     class: attrs.class,
-                    width: attrs.width,
-                    height: attrs.height,
+                    width: width,
+                    height: height,
                     view_box: attrs.view_box,
                     style: attrs.style,
                     "xmlns": "http://www.w3.org/2000/svg",

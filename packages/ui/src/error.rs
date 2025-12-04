@@ -3,7 +3,7 @@ use std::fmt;
 
 use thiserror::Error;
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Clone, Error, PartialEq)]
 pub enum Error {
     /// Storage-related failure
     #[error("Storage failure: {0}")]
@@ -13,24 +13,28 @@ pub enum Error {
     #[error("I/O error: {0}")]
     Io(String),
 
+    /// Graphviz engine not initialized
+    #[error("Graphviz engine not initialized")]
+    GvizNotInitialized,
+
     /// DOT Render error
     #[error(transparent)]
     DotRenderError(#[from] RenderError),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RenderError {
     pub errors: Vec<ErrorInfo>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ErrorInfo {
     pub level: ErrorLevel,
     pub message: String,
     pub line: Option<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ErrorLevel {
     Info,
     Warning,
