@@ -14,7 +14,7 @@ watch-css:
 
 # Build the web app
 build:
-  dx bundle --out-dir docs
+  dx bundle  --release --out-dir docs
 
 serve:
   dx serve
