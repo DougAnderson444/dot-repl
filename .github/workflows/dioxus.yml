@@ -13,7 +13,7 @@ jobs:
 
       - uses: cargo-bins/cargo-binstall@main
 
-      - name: Binstall dioxus-cli ver 6
+      - name: Binstall dioxus-cli
         run: cargo binstall --no-confirm dioxus-cli@0.7.1
         
       - name: Install just
