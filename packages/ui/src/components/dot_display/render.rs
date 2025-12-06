@@ -1,11 +1,13 @@
 //! Graphviz SVG → Dioxus renderer with optional "rough" hand-drawn styling.
 //!
 //! When `rough` feature is enabled, shapes and paths can be converted to hand-drawn versions using `roughr`.
+use super::fonts::{ARCHITECTS_DAUGHTER_CSS, ARCHITECTS_DAUGHTER_FAMILY};
 use dioxus::logger::tracing;
 use dioxus::prelude::*;
 use dioxus_router::Navigator;
 use roxmltree::{Document, Node};
 use std::borrow::Cow;
+
 #[cfg(feature = "rough")]
 use std::fmt::Display;
 
@@ -628,13 +630,11 @@ svg, text, tspan {
 
     let custom_style = if cfg.rough_style && cfg.rough_use_custom_font {
         if let Some(css) = cfg.rough_embed_font_data {
-            // css should already contain @font-face
-            format!(
-                "{css}\nsvg, text, tspan {{ font-family: 'Architects Daughter', 'Comic Sans MS', cursive, sans-serif; }}"
-            )
+            format!("{css}\nsvg, text, tspan {{ font-family: {ARCHITECTS_DAUGHTER_FAMILY}; }}")
         } else {
-            // Fallback: external link (will not be self-contained)
-            arch_daughter.to_string()
+            format!(
+                "{ARCHITECTS_DAUGHTER_CSS}\nsvg, text, tspan {{ font-family: {ARCHITECTS_DAUGHTER_FAMILY}; }}"
+            )
         }
     } else {
         String::new()

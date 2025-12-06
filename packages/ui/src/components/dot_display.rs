@@ -1,4 +1,7 @@
 //! Component to render DOT graphs using Graphvizm and Dioxus
+pub mod fonts;
+use fonts::{ARCHITECTS_DAUGHTER_CSS, ARCHITECTS_DAUGHTER_FAMILY};
+
 mod render;
 pub use render::{GraphvizSvg, SvgBuildConfig};
 

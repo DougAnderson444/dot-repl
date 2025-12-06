@@ -9,10 +9,11 @@ mod storage;
 
 use dioxus::prelude::*;
 
+use ui::components::fonts::ARCHITECTS_DAUGHTER_FAMILY;
 use ui::{GVizProvider, Navbar, StorageProvider};
-use views::{Blog, GraphVizWebView, Home};
 
 mod views;
+use views::{Blog, GraphVizWebView, Home};
 
 use gloo_timers::future::sleep;
 use std::time::Duration;
@@ -85,6 +86,14 @@ fn App() -> Element {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap"
+        }
+        document::Link {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap"
+        }
         document::Script {
             r#type: "module",
             r#"
@@ -104,14 +113,18 @@ fn App() -> Element {
 #[component]
 fn WebNavbar() -> Element {
     rsx! {
-        Navbar {
-            Link {
-                to: Route::Home {},
-                "Home"
-            }
-            Link {
-                to: Route::Blog { id: 1 },
-                "Blog"
+        div {
+            style: "font-family: {ARCHITECTS_DAUGHTER_FAMILY}",
+            class: "font-bold",
+            Navbar {
+                Link {
+                    to: Route::Home {},
+                    "Drawn Systems"
+                }
+                Link {
+                    to: Route::Blog { id: 1 },
+                    "Blog"
+                }
             }
         }
 
