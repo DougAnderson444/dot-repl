@@ -32,7 +32,7 @@ pub fn GraphEditor(dot_input: Signal<String>) -> Element {
                 // Left panel: collapsible
                 if !collapsed() {
                     div {
-                        class: "flex flex-col flex-1 bg-gray-50 border-r border-gray-200 overflow-auto w-1/2 max-w-[800px]",
+                        class: "flex flex-col flex-1 bg-gray-50 border-r border-gray-200 overflow-none w-1/2 max-w-[800px]",
                         h2 {
                             class: "text-xl font-bold text-gray-800 p-2 border-b border-gray-200 flex justify-between items-center",
                             "DOT Source"
