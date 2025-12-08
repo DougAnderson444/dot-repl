@@ -1,124 +1,258 @@
 //! Type definitions for the template manager.
 //! Uses schemars to generate JSON schema for the data structure.
 //! This file is used to define the structure of the data that will be managed by the template manager.
-use std::fmt::Display;
+pub mod dot;
+pub use dot::{ColorConfig, DotConfig, NodeShapeConfig};
 
-use schemars::{JsonSchema, Schema};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-/// Top most parent structure for the organization.
+pub type ID = String;
+
+/// Organization structure optimized for graph visualization
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct Organization {
-    /// The name of the organization.
     pub name: String,
-    /// The purpose of the organization.
-    pub purpose: Purpose,
-    /// The people involved in the organization.
-    pub people: People,
-    /// The projects managed by the organization.
-    pub projects: Projects,
-    /// The systems in production managed by the organization.
-    pub production_systems: Vec<Production>,
-    /// Progress made by projects and systems in production.
-    pub progress: Progress,
-    /// The property available to the organization.
-    pub property: Property,
+
+    // Flat collections of entities (nodes in the graph)
+    pub purposes: HashMap<ID, Purpose>,
+    pub people: HashMap<ID, Person>,
+    pub projects: HashMap<ID, Project>,
+    pub production_systems: HashMap<ID, ProductionSystem>,
+    pub property_items: HashMap<ID, PropertyItem>,
+
+    // Relationships (edges in the graph)
+    pub relationships: Vec<Relationship>,
 }
 
-/// The purpose of this organization.
 #[derive(Serialize, Deserialize, JsonSchema, Clone)]
 pub struct Purpose {
+    pub id: ID,
     pub description: String,
+    /// For visualization: color, priority level, etc.
+    pub display: DisplayAttributes,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct Person {
-    /// The name of this person.
+    pub id: ID,
     pub name: String,
-    /// The title or role of this person in the organization.
     pub title: String,
-    /// The projects this person is involved in.
-    pub projects: Projects,
-    /// The production systems this person is responsible for.
-    pub production_systems: Vec<Production>,
+    pub display: DisplayAttributes,
 }
 
-/// The people involved in the organization.
 #[derive(Serialize, Deserialize, JsonSchema)]
-pub struct People {
-    pub members: Vec<Person>,
-}
-
-/// Project
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
 pub struct Project {
+    pub id: ID,
     pub name: String,
-    /// The purpose which this project serves.
-    pub purpose: Purpose,
-    /// What production group will maintain this project once it's in production.
-    pub production_group: Production,
+    pub status: ProjectStatus,
+    pub display: DisplayAttributes,
 }
 
-/// The Projects managed by the organization.
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
+pub enum ProjectStatus {
+    Planning,
+    Active,
+    Completed,
+    OnHold,
+}
+
 #[derive(Serialize, Deserialize, JsonSchema)]
-pub struct Projects {
-    pub projects: Vec<Project>,
+pub struct ProductionSystem {
+    pub id: ID,
+    pub name: String,
+    pub status: SystemStatus,
+    pub display: DisplayAttributes,
 }
 
-impl From<Vec<Project>> for Projects {
-    fn from(projects: Vec<Project>) -> Self {
-        Projects { projects }
-    }
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
+pub enum SystemStatus {
+    Operational,
+    Maintenance,
+    Degraded,
+    Offline,
 }
 
-/// A system in production managed by the organization.
+#[derive(Serialize, Deserialize, JsonSchema)]
+pub struct PropertyItem {
+    pub id: ID,
+    pub name: String,
+    pub property_type: PropertyType,
+    pub display: DisplayAttributes,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
+pub enum PropertyType {
+    Physical,
+    Intellectual,
+    Financial,
+}
+
+/// Visual attributes for DOT rendering
 #[derive(Serialize, Deserialize, JsonSchema, Clone)]
-pub struct Production {
-    pub name: String,
+pub struct DisplayAttributes {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shape: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub style: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label_override: Option<String>,
 }
 
-/// Progress made by projects and systems in production.
-#[derive(Serialize, Deserialize, JsonSchema)]
-pub struct Progress {
-    pub project_progress: Vec<(String, String)>, // (project_name, progress_description)
-    pub system_progress: Vec<(String, String)>,  // (system_name, progress_description)
+impl Default for DisplayAttributes {
+    fn default() -> Self {
+        Self {
+            color: None,
+            shape: None,
+            style: None,
+            label_override: None,
+        }
+    }
 }
 
-/// The property available to the organization
-#[derive(Serialize, Deserialize, JsonSchema)]
-pub struct Property {
-    pub items: Vec<String>,
+/// Relationship following Subject-Predicate-Object pattern
+#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+pub struct Relationship {
+    pub subject_id: ID,
+    pub subject_type: EntityType,
+    pub predicate: RelationType,
+    pub object_id: ID,
+    pub object_type: EntityType,
+    /// Visual attributes for edge rendering
+    pub display: EdgeDisplayAttributes,
 }
 
+#[derive(Eq, Hash, PartialEq, Serialize, Deserialize, JsonSchema, Clone)]
+pub enum EntityType {
+    Purpose,
+    Person,
+    Project,
+    ProductionSystem,
+    Property,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema, Clone, Debug)]
+pub enum RelationType {
+    // Person relationships
+    WorksOn,
+    Manages,
+    Leads,
+
+    // Project relationships
+    Serves,        // Project serves Purpose
+    DependsOn,     // Project depends on Project
+    Uses,          // Uses PropertyItem
+    TransitionsTo, // Project transitions to ProductionSystem
+
+    // Production relationships
+    Maintains, // Person maintains ProductionSystem
+    Requires,  // ProductionSystem requires PropertyItem
+    Supports,  // ProductionSystem supports Purpose
+
+    // Generic
+    PartOf,
+}
+
+/// Visual attributes for DOT edge rendering
+#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+pub struct EdgeDisplayAttributes {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub style: Option<String>, // "solid", "dashed", "dotted"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weight: Option<f32>, // Edge weight for layout
+}
+
+impl Default for EdgeDisplayAttributes {
+    fn default() -> Self {
+        Self {
+            color: None,
+            style: None,
+            label: None,
+            weight: None,
+        }
+    }
+}
+
+// Helper methods for DOT generation
 impl Organization {
-    /// Generates a JSON schema for the Organization structure.
-    pub fn schema() -> Schema {
-        schemars::schema_for!(Self)
+    /// Get all nodes grouped by type for subgraph generation
+    pub fn nodes_by_type(&self) -> HashMap<EntityType, Vec<&str>> {
+        let mut result: HashMap<EntityType, Vec<&str>> = HashMap::new();
+
+        for id in self.purposes.keys() {
+            result
+                .entry(EntityType::Purpose)
+                .or_default()
+                .push(id.as_str());
+        }
+        for id in self.people.keys() {
+            result
+                .entry(EntityType::Person)
+                .or_default()
+                .push(id.as_str());
+        }
+        for id in self.projects.keys() {
+            result
+                .entry(EntityType::Project)
+                .or_default()
+                .push(id.as_str());
+        }
+        for id in self.production_systems.keys() {
+            result
+                .entry(EntityType::ProductionSystem)
+                .or_default()
+                .push(id.as_str());
+        }
+        for id in self.property_items.keys() {
+            result
+                .entry(EntityType::Property)
+                .or_default()
+                .push(id.as_str());
+        }
+
+        result
     }
-}
 
-impl From<Organization> for String {
-    fn from(org: Organization) -> Self {
-        serde_json::to_string_pretty(&org).unwrap_or_default()
-    }
-}
-
-impl Display for Organization {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // json pretty print
-        let json = serde_json::to_string_pretty(self).map_err(|_| std::fmt::Error)?;
-        write!(f, "{}", json)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_schema_generation() {
-        let schema = Organization::schema();
-        println!("{}", serde_json::to_string_pretty(&schema).unwrap());
-        // Further assertions can be made here to validate the schema structure.
+    /// Get node label for DOT rendering
+    pub fn get_node_label(&self, id: &str, entity_type: &EntityType) -> String {
+        match entity_type {
+            EntityType::Purpose => self
+                .purposes
+                .get(id)
+                .and_then(|p| p.display.label_override.clone())
+                .unwrap_or_else(|| {
+                    self.purposes
+                        .get(id)
+                        .map(|p| p.description.clone())
+                        .unwrap_or_default()
+                }),
+            EntityType::Person => self
+                .people
+                .get(id)
+                .map(|p| format!("{}\n{}", p.name, p.title))
+                .unwrap_or_default(),
+            EntityType::Project => self
+                .projects
+                .get(id)
+                .map(|p| format!("{}\n[{:?}]", p.name, p.status))
+                .unwrap_or_default(),
+            EntityType::ProductionSystem => self
+                .production_systems
+                .get(id)
+                .map(|s| format!("{}\n[{:?}]", s.name, s.status))
+                .unwrap_or_default(),
+            EntityType::Property => self
+                .property_items
+                .get(id)
+                .map(|i| i.name.clone())
+                .unwrap_or_default(),
+        }
     }
 }

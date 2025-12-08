@@ -1,15 +1,10 @@
-//! Creates a basic Organization which meets the JSON schema.
-//!
-//! # Example
+//! An example demonstrating how to generate a DOT representation
+//! of an organization using the `managers-template` crate.
 //!
 //! ```sh
-//! cargo run --example basic --package managers-template -- --nocapture
+//! cargo run --example dot_generation --package managers-template -- --nocapture
 //! ```
-use managers_template::{
-    DisplayAttributes, EdgeDisplayAttributes, EntityType, Organization, Person, ProductionSystem,
-    Project, ProjectStatus, PropertyItem, PropertyType, Purpose, RelationType, Relationship,
-    SystemStatus,
-};
+use managers_template::*;
 use std::collections::HashMap;
 
 fn main() {
@@ -156,5 +151,16 @@ fn main() {
         relationships,
     };
 
-    println!("{}", serde_json::to_string_pretty(&org).unwrap());
+    let config = DotConfig {
+        use_hierarchical_layout: true,
+        rankdir: "TB",
+        show_status: true,
+        ..Default::default()
+    };
+
+    let dot_string = org.to_dot(&config);
+    println!("{}", dot_string);
+
+    // Now pass dot_string to graphviz to generate SVG
+    // Then pass that SVG to your Dioxus GraphvizSvg component
 }
