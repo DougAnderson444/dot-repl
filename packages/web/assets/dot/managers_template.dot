@@ -1,3 +1,151 @@
-digraph { 
-  manager -> template; 
+digraph Organization {
+    graph [
+        newrank = true,
+        nodesep = 0.3,
+        ranksep = 0.5,
+        splines = false
+    ]
+    
+    node [
+        shape = box,
+        style = filled,
+        fillcolor = lightblue
+    ]
+    
+    edge [
+        weight = 10
+    ]
+    
+    // Purpose subgraph - spans top
+    subgraph cluster_purpose {
+        label = "Purpose";
+        style = filled;
+        fillcolor = lightgray;
+        
+        mission [label="Mission"];
+        vision [label="Vision"];
+        values [label="Values"];
+        
+        mission -> vision -> values [style=invis];
+    }
+    
+    // People subgraph - left pillar
+    subgraph cluster_people {
+        label = "People";
+        style = filled;
+        fillcolor = lightyellow;
+        
+        person1 [label="Person 1"];
+        person2 [label="Person 2"];
+        person3 [label="Person 3"];
+        
+        person1 -> person2 -> person3 [style=invis];
+    }
+    
+    // Projects subgraph - center top
+    subgraph cluster_projects {
+        label = "Projects";
+        style = filled;
+        fillcolor = lightgreen;
+        
+        project1 [label="Project A"];
+        project2 [label="Project B"];
+        
+        project1 -> project2 [style=invis];
+    }
+    
+    // Progress subgraph - right pillar
+    subgraph cluster_progress {
+        label = "Progress";
+        style = filled;
+        fillcolor = lightpink;
+        
+        metric1 [label="Metric 1"];
+        metric2 [label="Metric 2"];
+        metric3 [label="Metric 3"];
+        
+        metric1 -> metric2 -> metric3;
+    }
+    
+    // Production subgraph - center bottom
+    subgraph cluster_production {
+        label = "Production";
+        style = filled;
+        fillcolor = lightcyan;
+        
+        prod1 [label="Product 1"];
+        prod2 [label="Product 2"];
+        
+        prod1 -> prod2;
+    }
+    
+    // Property subgraph - spans bottom
+    subgraph cluster_property {
+        label = "Property";
+        style = filled;
+        fillcolor = lightgray;
+        
+        asset1 [label="Asset 1"];
+        asset2 [label="Asset 2"];
+        asset3 [label="Asset 3"];
+        
+        asset1 -> asset2 -> asset3;
+    }
+    
+    // Arrange Purpose row
+    subgraph purpose_row {
+        rank = same;
+        mission; vision; values;
+    }
+    
+    // Arrange top middle row
+    subgraph top_middle_row {
+        rank = same;
+        person1; project1; metric1;
+    }
+    
+    subgraph middle_row_2 {
+        rank = same;
+        person2; project2; metric2;
+    }
+    
+
+    
+    // Arrange Production row
+    subgraph production_row {
+        rank = same;
+        prod1;
+    }
+    
+    subgraph production_row_2 {
+        rank = same;
+        prod2;
+    }
+    
+    // Arrange Property row
+    subgraph property_row {
+        rank = same;
+        asset1; asset2; asset3;
+    }
+    
+    // Connect Purpose to middle sections (invisible for layout)
+    mission -> person1 [style=invis];
+    vision -> project1 [style=invis];
+    values -> metric1 [style=invis];
+    
+    // Connect Projects to Production (invisible for layout)
+    project2 -> prod1 [style=invis];
+    
+    // Connect to Property (invisible for layout)
+    person3 -> asset1 [style=invis];
+    prod2 -> asset2 [style=invis];
+    metric3 -> asset3 [style=invis];
+    
+    // Visible relationship edges
+    person1 -> project1 [label="Manages", style=solid];
+    person2 -> project2 [label="Leads", style=solid];
+    project1 -> prod1 [label="Delivers", style=solid];
+    project2 -> prod2 [label="Maintains", style=solid];
+    asset2 -> prod2 [label="Used by", style=solid];
+    metric1 -> project1 [label="Tracks", style=solid];
 }
