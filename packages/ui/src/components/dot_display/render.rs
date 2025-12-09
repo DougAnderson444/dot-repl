@@ -588,7 +588,7 @@ pub fn GraphvizSvg(svg_text: String, config: SvgBuildConfig) -> Element {
         return rsx! { svg { class: "graphviz-svg error", "No <svg> root found." } };
     };
 
-    build_node(root, &config, navigator).unwrap_or(rsx! {})
+    build_node(root, &config, navigator, 0).unwrap_or(rsx! {})
 }
 
 fn render_parse_error(err: roxmltree::Error, did_strip: bool) -> Element {
@@ -603,7 +603,24 @@ fn render_parse_error(err: roxmltree::Error, did_strip: bool) -> Element {
 
 // ------------------------- Recursive build -------------------------
 
-fn build_node(node: Node, cfg: &SvgBuildConfig, navigator: Navigator) -> Option<Element> {
+const MAX_RECURSION_DEPTH: usize = 100;
+
+fn build_node(
+    node: Node,
+    cfg: &SvgBuildConfig,
+    navigator: Navigator,
+    depth: usize,
+) -> Option<Element> {
+    if depth > MAX_RECURSION_DEPTH {
+        tracing::error!("Maximum recursion depth exceeded in build_node");
+        return Some(rsx! {
+            g {
+                "data-error": "max-depth-exceeded",
+                "<!-- Max recursion depth exceeded -->"
+            }
+        });
+    }
+
     if node.is_text() {
         let t = node.text().unwrap_or_default();
         if t.trim().is_empty() {
@@ -619,14 +636,8 @@ fn build_node(node: Node, cfg: &SvgBuildConfig, navigator: Navigator) -> Option<
     let attrs = collect_attrs(node);
     let children: Vec<Element> = node
         .children()
-        .filter_map(|c| build_node(c, cfg, navigator))
+        .filter_map(|c| build_node(c, cfg, navigator, depth + 1))
         .collect();
-
-    let arch_daughter = r#"@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
-svg, text, tspan {
-  font-family: 'Architects Daughter','Noto Sans Symbols 2','Noto Sans',sans-serif;
-}"#;
 
     let custom_style = if cfg.rough_style && cfg.rough_use_custom_font {
         if let Some(css) = cfg.rough_embed_font_data {
@@ -768,6 +779,20 @@ svg, text, tspan {
             }
         },
         "a" => build_anchor(attrs, children, cfg, navigator),
+
+        // Handle HTML table elements (from DOT labels)
+        "table" | "tr" | "td" | "th" | "tbody" | "thead" => {
+            rsx! {
+                g {
+                    id: attrs.id,
+                    class: attrs.class,
+                    style: attrs.style,
+                    "data-html-tag": tag,
+                    for child in children { {child} }
+                }
+            }
+        }
+
         _ => {
             rsx! {
                 g {

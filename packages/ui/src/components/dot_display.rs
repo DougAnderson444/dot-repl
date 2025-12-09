@@ -1,6 +1,5 @@
 //! Component to render DOT graphs using Graphvizm and Dioxus
 pub mod fonts;
-use fonts::{ARCHITECTS_DAUGHTER_CSS, ARCHITECTS_DAUGHTER_FAMILY};
 
 mod render;
 pub use render::{GraphvizSvg, SvgBuildConfig};
@@ -18,8 +17,41 @@ pub fn DotDisplay(
 ) -> Element {
     let mut svg_signal = use_signal(|| None::<String>);
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
-    let maybe_gviz = gviz_signal.read();
 
+    // Track last dot to only render when changed
+    let mut last_dot = use_signal(|| String::new());
+    let dot_changed = last_dot.read().as_str() != dot.as_str();
+
+    if dot_changed {
+        last_dot.set(dot.clone());
+        let gviz_signal_val = gviz_signal.read();
+
+        if let Some(gviz) = gviz_signal_val.as_ref() {
+            if dot.is_empty() {
+                if error_signal.peek().is_some() {
+                    error_signal.set(None);
+                }
+                svg_signal.set(None);
+            } else {
+                match gviz.render_dot(&dot) {
+                    Ok(rendered_svg) => {
+                        if error_signal.peek().is_some() {
+                            error_signal.set(None);
+                        }
+                        svg_signal.set(Some(rendered_svg));
+                    }
+                    Err(e) => match e {
+                        crate::Error::DotRenderError(render_error) => {
+                            error_signal.set(Some(render_error));
+                        }
+                        _ => {}
+                    },
+                }
+            }
+        }
+    }
+
+    let maybe_gviz = gviz_signal.read();
     match maybe_gviz.as_ref() {
         // Case 1: No gviz provider yet
         None => {
@@ -31,13 +63,9 @@ pub fn DotDisplay(
             }
         }
         // Cases 2-4: We have gviz
-        Some(gviz) => {
+        Some(_gviz) => {
             // Case 2: Empty dot string
             if dot.is_empty() {
-                // Clear error when input is empty
-                if error_signal.read().is_some() {
-                    error_signal.set(None);
-                }
                 return rsx! {
                     div {
                         class: "text-grey-500 p-4 text-center",
@@ -46,57 +74,29 @@ pub fn DotDisplay(
                 };
             }
 
-            // Case 3 & 4: Try to render, update signal if valid and different
-            match gviz.render_dot(&dot) {
-                Ok(rendered_svg) => {
-                    // Clear any previous errors
-                    if error_signal.read().is_some() {
-                        error_signal.set(None);
-                    }
-
-                    // Case 4: Valid render - update signal if different
-                    if svg_signal.read().as_ref() != Some(&rendered_svg) {
-                        svg_signal.set(Some(rendered_svg));
-                    }
-                }
-                Err(e) => {
-                    // Update error signal with render error
-                    match e {
-                        crate::Error::DotRenderError(render_error) => {
-                            error_signal.set(Some(render_error));
-                        }
-                        _ => {
-                            // For other error types, we don't have line info
-                            // but we could still clear the error signal
-                        }
-                    }
-                }
-            }
-
-            // Display current SVG if we have one
+            // Display current SVG if we have one, otherwise show loading
             if let Some(svg) = svg_signal.read().as_ref() {
                 let rough = rough_enabled();
-                let config = SvgBuildConfig {
+                let config = use_memo(move || SvgBuildConfig {
                     rough_style: rough,
                     ..Default::default()
-                };
+                });
 
                 rsx! {
                     div {
                         class: "w-full h-full overflow-auto",
                         GraphvizSvg {
-                            key: key,
-                            svg_text: svg,
-                            config: config
+                            svg_text: svg.clone(),
+                            config: config()
                         }
                     }
                 }
             } else {
-                // No SVG yet (first render with invalid dot)
+                // No SVG yet - could be first render with no gviz, or waiting for render
                 rsx! {
                     div {
                         class: "text-grey-500 p-4 text-center",
-                        "Invalid Graphviz syntax"
+                        "Rendering..."
                     }
                 }
             }
