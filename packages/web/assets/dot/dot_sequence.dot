@@ -1,0 +1,58 @@
+digraph SequenceDiagram {
+    fontname="Helvetica,Arial,sans-serif"
+    node [fontname="Helvetica,Arial,sans-serif"]
+    edge [fontname="Helvetica,Arial,sans-serif"]
+
+    rankdir=TB
+    splines=line
+
+    // Lifelines
+    node [shape=box, style="filled", fillcolor="#e3f2fd", width=2, height=0.6]
+    User     [label="User"]
+    Frontend [label="Frontend\nApplication"]
+    Database [label="Database"]
+    Backend  [label="Backend\nAPI"]
+    // Set the order of the appearance 
+    User -> Frontend -> Backend -> Database [style=invis];
+
+    // Swap positions here:
+    {rank=same; User; Frontend; Database; Backend}
+
+    // Activation points
+    node [shape=point, width=0.05, height=0.05, style=filled, fillcolor=black]
+
+    u0 u1 u2 u3 u4 u5 u6
+    f0 f1 f2 f3 f4 f5 f6
+    d0 d1 d2 d3 d4 d5 d6
+    b0 b1 b2 b3 b4 b5 b6
+
+    // Vertical lifelines
+    edge [style=dashed, color=gray, arrowhead=none, weight=100]
+
+    User     -> u0 -> u1 -> u2 -> u3 -> u4 -> u5 -> u6
+    Frontend -> f0 -> f1 -> f2 -> f3 -> f4 -> f5 -> f6
+    Database -> d0 -> d1 -> d2 -> d3 -> d4 -> d5 -> d6
+    Backend  -> b0 -> b1 -> b2 -> b3 -> b4 -> b5 -> b6
+
+    // Horizontal alignment
+    {rank=same; u0; f0; d0; b0}
+    {rank=same; u1; f1; d1; b1}
+    {rank=same; u2; f2; d2; b2}
+    {rank=same; u3; f3; d3; b3}
+    {rank=same; u4; f4; d4; b4}
+    {rank=same; u5; f5; d5; b5}
+    {rank=same; u6; f6; d6; b6}
+
+    // Message arrows
+    edge [style=solid, fontsize=11, arrowhead=vee, constraint=false, weight=0]
+
+    u1 -> f1 [label="1. Enter credentials", color="#1976d2"]
+    f2 -> b2 [label="2. POST /login",       color="#d32f2f"]
+    b3 -> d3 [label="3. Query user",        color="#388e3c"]
+
+    // Corrected: Database -> Backend
+    d4 -> b4 [label="4. Return user data",  color="#388e3c", style=dashed]
+
+    b5 -> f5 [label="5. Auth token",        color="#d32f2f", style=dashed]
+    f6 -> u6 [label="6. Login success",     color="#1976d2", style=dashed]
+}

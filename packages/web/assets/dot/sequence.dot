@@ -1,0 +1,55 @@
+digraph SequenceDiagram {
+	fontname="Helvetica,Arial,sans-serif"
+	node [fontname="Helvetica,Arial,sans-serif"]
+	edge [fontname="Helvetica,Arial,sans-serif"]
+	
+	rankdir=TB
+	splines=false
+	
+	// Lifelines (actors/components)
+	node [shape=box, style="filled", fillcolor="#e3f2fd", width=2, height=0.6]
+	User [label="User"]
+	Frontend [label="Frontend\nApplication"]
+	Backend [label="Backend\nAPI"]
+	Database [label="Database"]
+	
+	// Invisible nodes for spacing and alignment
+	node [shape=point, width=0, height=0, style=invis]
+	u1 u2 u3 u4 u5 u6 u7 u8
+	f1 f2 f3 f4 f5 f6 f7 f8
+	b1 b2 b3 b4 b5 b6 b7 b8
+	d1 d2 d3 d4 d5 d6 d7 d8
+	
+	// Create vertical lifelines (these control the vertical layout)
+	edge [style=dashed, color=gray, arrowhead=none]
+	User -> u1 -> u2 -> u3 -> u4 -> u5 -> u6 -> u7 -> u8
+	Frontend -> f1 -> f2 -> f3 -> f4 -> f5 -> f6 -> f7 -> f8
+	Backend -> b1 -> b2 -> b3 -> b4 -> b5 -> b6 -> b7 -> b8
+	Database -> d1 -> d2 -> d3 -> d4 -> d5 -> d6 -> d7 -> d8
+	
+	// Force same rank for horizontal alignment
+	{rank=same; User; Frontend; Backend; Database}
+	{rank=same; u1; f1; b1; d1}
+	{rank=same; u2; f2; b2; d2}
+	{rank=same; u3; f3; b3; d3}
+	{rank=same; u4; f4; b4; d4}
+	{rank=same; u5; f5; b5; d5}
+	{rank=same; u6; f6; b6; d6}
+	{rank=same; u7; f7; b7; d7}
+	{rank=same; u8; f8; b8; d8}
+	
+	// Messages between lifelines (constraint=false keeps lifelines straight)
+	edge [style=solid, color="#1976d2", fontsize=11, arrowhead=vee, constraint=false]
+	
+	u1 -> f1 [label="1. Enter credentials"]
+	f2 -> b2 [label="2. POST /login", color="#d32f2f"]
+	b3 -> d3 [label="3. Query user", color="#388e3c"]
+	d4 -> b4 [label="4. Return user data", color="#388e3c", style=dashed]
+	b5 -> f5 [label="5. Auth token", color="#d32f2f", style=dashed]
+	f6 -> u6 [label="6. Login success", style=dashed]
+	
+	// Add note
+	note [shape=note, style=filled, fillcolor="#fff9c4", label="Sequence shows\nsuccessful login\nwith token\nauthentication"]
+	{rank=same; u7; note}
+	u7 -> note [style=invis]
+}
