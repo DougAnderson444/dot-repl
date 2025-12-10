@@ -19,6 +19,7 @@ pub struct Organization {
     pub purposes: HashMap<ID, Purpose>,
     pub people: HashMap<ID, Person>,
     pub projects: HashMap<ID, Project>,
+    pub progress_metrics: HashMap<ID, ProgressMetric>,
     pub production_systems: HashMap<ID, ProductionSystem>,
     pub property_items: HashMap<ID, PropertyItem>,
 
@@ -56,6 +57,14 @@ pub enum ProjectStatus {
     Active,
     Completed,
     OnHold,
+}
+
+#[derive(Serialize, Deserialize, JsonSchema)]
+pub struct ProgressMetric {
+    pub id: ID,
+    pub name: String,
+    pub metric_type: String,
+    pub display: DisplayAttributes,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -130,6 +139,7 @@ pub enum EntityType {
     Purpose,
     Person,
     Project,
+    Progress,
     ProductionSystem,
     Property,
 }
@@ -204,6 +214,12 @@ impl Organization {
                 .or_default()
                 .push(id.as_str());
         }
+        for id in self.progress_metrics.keys() {
+            result
+                .entry(EntityType::Progress)
+                .or_default()
+                .push(id.as_str());
+        }
         for id in self.production_systems.keys() {
             result
                 .entry(EntityType::ProductionSystem)
@@ -242,6 +258,11 @@ impl Organization {
                 .projects
                 .get(id)
                 .map(|p| format!("{}\n[{:?}]", p.name, p.status))
+                .unwrap_or_default(),
+            EntityType::Progress => self
+                .progress_metrics
+                .get(id)
+                .map(|m| m.name.clone())
                 .unwrap_or_default(),
             EntityType::ProductionSystem => self
                 .production_systems

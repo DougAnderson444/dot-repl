@@ -17,6 +17,8 @@ pub struct DotConfig {
     pub colors: ColorConfig,
     /// Use hierarchical layout
     pub use_hierarchical_layout: bool,
+    /// Use template mode (matches managers_template.dot exactly)
+    pub use_template_mode: bool,
 }
 
 impl Default for DotConfig {
@@ -28,6 +30,7 @@ impl Default for DotConfig {
             node_shapes: NodeShapeConfig::default(),
             colors: ColorConfig::default(),
             use_hierarchical_layout: true,
+            use_template_mode: false,
         }
     }
 }
@@ -91,14 +94,35 @@ impl Organization {
     pub fn to_dot(&self, config: &DotConfig) -> String {
         let mut dot = String::with_capacity(4096);
 
-        writeln!(dot, "digraph organization {{").unwrap();
-        writeln!(dot, "  rankdir={};", config.rankdir).unwrap();
-        writeln!(dot, "  node [style=filled];").unwrap();
-        writeln!(dot, "  label=\"{}\";", escape_dot(&self.name)).unwrap();
-        writeln!(dot, "  labelloc=t;").unwrap();
-        writeln!(dot, "  compound=true;").unwrap();
-        writeln!(dot, "  newrank=true;").unwrap();
-        writeln!(dot).unwrap();
+        if config.use_template_mode {
+            writeln!(dot, "digraph Organization {{").unwrap();
+            writeln!(dot, "    graph [").unwrap();
+            writeln!(dot, "        newrank = true,").unwrap();
+            writeln!(dot, "        nodesep = 0.3,").unwrap();
+            writeln!(dot, "        ranksep = 0.5,").unwrap();
+            writeln!(dot, "        splines = false").unwrap();
+            writeln!(dot, "    ]").unwrap();
+            writeln!(dot).unwrap();
+            writeln!(dot, "    node [").unwrap();
+            writeln!(dot, "        shape = box,").unwrap();
+            writeln!(dot, "        style = filled,").unwrap();
+            writeln!(dot, "        fillcolor = lightblue").unwrap();
+            writeln!(dot, "    ]").unwrap();
+            writeln!(dot).unwrap();
+            writeln!(dot, "    edge [").unwrap();
+            writeln!(dot, "        weight = 10").unwrap();
+            writeln!(dot, "    ]").unwrap();
+            writeln!(dot).unwrap();
+        } else {
+            writeln!(dot, "digraph organization {{").unwrap();
+            writeln!(dot, "  rankdir={};", config.rankdir).unwrap();
+            writeln!(dot, "  node [style=filled];").unwrap();
+            writeln!(dot, "  label=\"{}\";", escape_dot(&self.name)).unwrap();
+            writeln!(dot, "  labelloc=t;").unwrap();
+            writeln!(dot, "  compound=true;").unwrap();
+            writeln!(dot, "  newrank=true;").unwrap();
+            writeln!(dot).unwrap();
+        }
 
         if config.use_hierarchical_layout {
             self.write_hierarchical_layout(&mut dot, config);
@@ -116,118 +140,256 @@ impl Organization {
     }
 
     fn write_hierarchical_layout(&self, dot: &mut String, config: &DotConfig) {
-        // Top rank: Purpose (spans full width)
-        writeln!(dot, "  // Top tier: Purpose").unwrap();
+        // Set global graph properties
+        writeln!(
+            dot,
+            "  graph [newrank=true, nodesep=0.3, ranksep=0.5, splines=false];"
+        )
+        .unwrap();
+        writeln!(dot, "  edge [style=invis, weight=10];").unwrap();
+        writeln!(dot).unwrap();
+
+        // Top tier: Purpose (spans full width)
+        writeln!(dot, "  // Purpose cluster").unwrap();
         writeln!(dot, "  subgraph cluster_purpose {{").unwrap();
         writeln!(dot, "    label=\"Purpose\";").unwrap();
         writeln!(dot, "    style=filled;").unwrap();
-        writeln!(dot, "    color=lightgrey;").unwrap();
-        writeln!(dot, "    rank=same;").unwrap();
+        writeln!(dot, "    fillcolor=lightgray;").unwrap();
+
+        let purpose_ids: Vec<_> = self.purposes.keys().collect();
         for (id, purpose) in &self.purposes {
             write_purpose_node(dot, id, purpose, config);
         }
+
+        // Chain purposes horizontally with invisible edges
+        for i in 0..purpose_ids.len().saturating_sub(1) {
+            writeln!(
+                dot,
+                "    \"{}\" -> \"{}\";",
+                escape_dot(purpose_ids[i]),
+                escape_dot(purpose_ids[i + 1])
+            )
+            .unwrap();
+        }
         writeln!(dot, "  }}").unwrap();
         writeln!(dot).unwrap();
 
-        // Middle tier: People, Projects, Progress (side by side)
-        writeln!(dot, "  // Middle tier: People, Projects").unwrap();
-
-        // People subgraph (left)
+        // Middle tier: People (left pillar)
+        writeln!(dot, "  // People cluster").unwrap();
         writeln!(dot, "  subgraph cluster_people {{").unwrap();
         writeln!(dot, "    label=\"People\";").unwrap();
         writeln!(dot, "    style=filled;").unwrap();
-        writeln!(dot, "    color=lightgrey;").unwrap();
+        writeln!(dot, "    fillcolor=lightyellow;").unwrap();
+
+        let people_ids: Vec<_> = self.people.keys().collect();
         for (id, person) in &self.people {
             write_person_node(dot, id, person, config);
         }
+
+        // Chain people vertically with invisible edges
+        for i in 0..people_ids.len().saturating_sub(1) {
+            writeln!(
+                dot,
+                "    \"{}\" -> \"{}\";",
+                escape_dot(people_ids[i]),
+                escape_dot(people_ids[i + 1])
+            )
+            .unwrap();
+        }
         writeln!(dot, "  }}").unwrap();
         writeln!(dot).unwrap();
 
-        // Projects subgraph (middle-top)
+        // Middle tier: Projects (center top)
+        writeln!(dot, "  // Projects cluster").unwrap();
         writeln!(dot, "  subgraph cluster_projects {{").unwrap();
         writeln!(dot, "    label=\"Projects\";").unwrap();
         writeln!(dot, "    style=filled;").unwrap();
-        writeln!(dot, "    color=lightgrey;").unwrap();
+        writeln!(dot, "    fillcolor=lightgreen;").unwrap();
+
+        let project_ids: Vec<_> = self.projects.keys().collect();
         for (id, project) in &self.projects {
             write_project_node(dot, id, project, config);
         }
-        writeln!(dot, "  }}").unwrap();
-        writeln!(dot).unwrap();
 
-        // Production subgraph (middle-bottom, below projects)
-        writeln!(dot, "  subgraph cluster_production {{").unwrap();
-        writeln!(dot, "    label=\"Production\";").unwrap();
-        writeln!(dot, "    style=filled;").unwrap();
-        writeln!(dot, "    color=lightgrey;").unwrap();
-        for (id, system) in &self.production_systems {
-            write_production_node(dot, id, system, config);
+        // Chain projects vertically with invisible edges
+        for i in 0..project_ids.len().saturating_sub(1) {
+            writeln!(
+                dot,
+                "    \"{}\" -> \"{}\";",
+                escape_dot(project_ids[i]),
+                escape_dot(project_ids[i + 1])
+            )
+            .unwrap();
         }
         writeln!(dot, "  }}").unwrap();
         writeln!(dot).unwrap();
 
-        // Progress placeholder (we'll add this when you define Progress entities)
-        // For now, we can create invisible nodes to force layout
-        writeln!(dot, "  // Progress placeholder").unwrap();
+        // Middle tier: Progress (right pillar)
+        writeln!(dot, "  // Progress cluster").unwrap();
         writeln!(dot, "  subgraph cluster_progress {{").unwrap();
         writeln!(dot, "    label=\"Progress\";").unwrap();
         writeln!(dot, "    style=filled;").unwrap();
-        writeln!(dot, "    color=lightgrey;").unwrap();
-        writeln!(dot, "    progress_node [label=\"Progress Reports\", shape=note, style=filled, fillcolor=lightyellow];").unwrap();
+        writeln!(dot, "    fillcolor=lightpink;").unwrap();
+
+        let metric_ids: Vec<_> = self.progress_metrics.keys().collect();
+        for (id, metric) in &self.progress_metrics {
+            write_progress_node(dot, id, metric, config);
+        }
+
+        // Chain metrics vertically with invisible edges
+        for i in 0..metric_ids.len().saturating_sub(1) {
+            writeln!(
+                dot,
+                "    \"{}\" -> \"{}\";",
+                escape_dot(metric_ids[i]),
+                escape_dot(metric_ids[i + 1])
+            )
+            .unwrap();
+        }
+        writeln!(dot, "  }}").unwrap();
+        writeln!(dot).unwrap();
+
+        // Middle tier: Production (center bottom, below projects)
+        writeln!(dot, "  // Production cluster").unwrap();
+        writeln!(dot, "  subgraph cluster_production {{").unwrap();
+        writeln!(dot, "    label=\"Production\";").unwrap();
+        writeln!(dot, "    style=filled;").unwrap();
+        writeln!(dot, "    fillcolor=lightcyan;").unwrap();
+
+        let system_ids: Vec<_> = self.production_systems.keys().collect();
+        for (id, system) in &self.production_systems {
+            write_production_node(dot, id, system, config);
+        }
+
+        // Chain production systems vertically with invisible edges
+        for i in 0..system_ids.len().saturating_sub(1) {
+            writeln!(
+                dot,
+                "    \"{}\" -> \"{}\";",
+                escape_dot(system_ids[i]),
+                escape_dot(system_ids[i + 1])
+            )
+            .unwrap();
+        }
         writeln!(dot, "  }}").unwrap();
         writeln!(dot).unwrap();
 
         // Bottom tier: Property (spans full width)
-        writeln!(dot, "  // Bottom tier: Property").unwrap();
+        writeln!(dot, "  // Property cluster").unwrap();
         writeln!(dot, "  subgraph cluster_property {{").unwrap();
         writeln!(dot, "    label=\"Property\";").unwrap();
         writeln!(dot, "    style=filled;").unwrap();
-        writeln!(dot, "    color=lightgrey;").unwrap();
-        writeln!(dot, "    rank=same;").unwrap();
+        writeln!(dot, "    fillcolor=lightgray;").unwrap();
+
+        let property_ids: Vec<_> = self.property_items.keys().collect();
         for (id, item) in &self.property_items {
             write_property_node(dot, id, item, config);
+        }
+
+        // Chain property items horizontally with invisible edges
+        for i in 0..property_ids.len().saturating_sub(1) {
+            writeln!(
+                dot,
+                "    \"{}\" -> \"{}\";",
+                escape_dot(property_ids[i]),
+                escape_dot(property_ids[i + 1])
+            )
+            .unwrap();
         }
         writeln!(dot, "  }}").unwrap();
         writeln!(dot).unwrap();
 
-        // Invisible edges to enforce vertical ranking
-        writeln!(dot, "  // Invisible edges to enforce tier ordering").unwrap();
+        // Create rank=same subgraphs to align nodes horizontally
+        writeln!(dot, "  // Horizontal alignment").unwrap();
 
-        if let (Some(first_purpose_id), Some(first_person_id)) =
-            (self.purposes.keys().next(), self.people.keys().next())
-        {
+        // Purpose row
+        if !purpose_ids.is_empty() {
+            write!(dot, "  {{ rank=same; ").unwrap();
+            for id in &purpose_ids {
+                write!(dot, "\"{}\"; ", escape_dot(id)).unwrap();
+            }
+            writeln!(dot, "}}").unwrap();
+        }
+
+        // Top middle row - align first node of each middle column
+        if !people_ids.is_empty() || !project_ids.is_empty() || !metric_ids.is_empty() {
+            write!(dot, "  {{ rank=same; ").unwrap();
+            if !people_ids.is_empty() {
+                write!(dot, "\"{}\"; ", escape_dot(people_ids[0])).unwrap();
+            }
+            if !project_ids.is_empty() {
+                write!(dot, "\"{}\"; ", escape_dot(project_ids[0])).unwrap();
+            }
+            if !metric_ids.is_empty() {
+                write!(dot, "\"{}\"; ", escape_dot(metric_ids[0])).unwrap();
+            }
+            writeln!(dot, "}}").unwrap();
+        }
+
+        // Property row
+        if !property_ids.is_empty() {
+            write!(dot, "  {{ rank=same; ").unwrap();
+            for id in &property_ids {
+                write!(dot, "\"{}\"; ", escape_dot(id)).unwrap();
+            }
+            writeln!(dot, "}}").unwrap();
+        }
+        writeln!(dot).unwrap();
+
+        // Invisible edges to enforce vertical tier ordering
+        writeln!(dot, "  // Vertical tier ordering").unwrap();
+
+        // Purpose -> People/Projects
+        if let Some(first_purpose) = purpose_ids.first() {
+            if let Some(first_person) = people_ids.first() {
+                writeln!(
+                    dot,
+                    "  \"{}\" -> \"{}\";",
+                    escape_dot(first_purpose),
+                    escape_dot(first_person)
+                )
+                .unwrap();
+            } else if let Some(first_project) = project_ids.first() {
+                writeln!(
+                    dot,
+                    "  \"{}\" -> \"{}\";",
+                    escape_dot(first_purpose),
+                    escape_dot(first_project)
+                )
+                .unwrap();
+            }
+        }
+
+        // Projects -> Production
+        if let (Some(last_project), Some(first_system)) = (project_ids.last(), system_ids.first()) {
             writeln!(
                 dot,
-                "  \"{}\" -> \"{}\" [style=invis, weight=10];",
-                escape_dot(first_purpose_id),
-                escape_dot(first_person_id)
+                "  \"{}\" -> \"{}\";",
+                escape_dot(last_project),
+                escape_dot(first_system)
             )
             .unwrap();
         }
 
-        if let (Some(first_person_id), Some(first_property_id)) =
-            (self.people.keys().next(), self.property_items.keys().next())
-        {
-            writeln!(
-                dot,
-                "  \"{}\" -> \"{}\" [style=invis, weight=10];",
-                escape_dot(first_person_id),
-                escape_dot(first_property_id)
-            )
-            .unwrap();
-        }
-
-        // Enforce project above production
-        if let (Some(first_project_id), Some(first_system_id)) = (
-            self.projects.keys().next(),
-            self.production_systems.keys().next(),
-        ) {
-            writeln!(
-                dot,
-                "  \"{}\" -> \"{}\" [style=invis, weight=10];",
-                escape_dot(first_project_id),
-                escape_dot(first_system_id)
-            )
-            .unwrap();
+        // Middle tier -> Property
+        if let Some(first_property) = property_ids.first() {
+            if let Some(last_person) = people_ids.last() {
+                writeln!(
+                    dot,
+                    "  \"{}\" -> \"{}\";",
+                    escape_dot(last_person),
+                    escape_dot(first_property)
+                )
+                .unwrap();
+            } else if let Some(last_system) = system_ids.last() {
+                writeln!(
+                    dot,
+                    "  \"{}\" -> \"{}\";",
+                    escape_dot(last_system),
+                    escape_dot(first_property)
+                )
+                .unwrap();
+            }
         }
     }
 
@@ -367,7 +529,11 @@ fn write_purpose_node(dot: &mut String, id: &str, purpose: &Purpose, config: &Do
 }
 
 fn write_person_node(dot: &mut String, id: &str, person: &Person, config: &DotConfig) {
-    let label = format!("{}\\n{}", person.name, person.title);
+    let label = if person.title.is_empty() {
+        person.name.clone()
+    } else {
+        format!("{}\n{}", person.name, person.title)
+    };
 
     writeln!(
         dot,
@@ -446,10 +612,8 @@ fn write_production_node(
     )
     .unwrap();
 }
-
 fn write_property_node(dot: &mut String, id: &str, item: &PropertyItem, config: &DotConfig) {
-    let label = format!("{}\\n[{:?}]", item.name, item.property_type);
-
+    let label = &item.name;
     writeln!(
         dot,
         "    \"{}\" [label=\"{}\", shape={}, fillcolor=\"{}\"];",
@@ -460,6 +624,20 @@ fn write_property_node(dot: &mut String, id: &str, item: &PropertyItem, config: 
             .color
             .as_deref()
             .unwrap_or(config.colors.property)
+    )
+    .unwrap();
+}
+
+fn write_progress_node(dot: &mut String, id: &str, metric: &ProgressMetric, config: &DotConfig) {
+    let label = &metric.name;
+
+    writeln!(
+        dot,
+        "    \"{}\" [label=\"{}\", shape={}, fillcolor=\"{}\"];",
+        escape_dot(id),
+        escape_dot(label),
+        config.node_shapes.person, // Use box shape like other nodes
+        metric.display.color.as_deref().unwrap_or("lightblue")
     )
     .unwrap();
 }

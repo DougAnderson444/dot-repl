@@ -154,6 +154,7 @@ fn main() {
         production_systems,
         property_items,
         relationships,
+        progress_metrics: HashMap::new(),
     };
 
     println!("{}", serde_json::to_string_pretty(&org).unwrap());

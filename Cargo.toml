@@ -5,7 +5,7 @@ members = [
   "packages/web",
   "packages/*",
   "packages/mobile",
-  "packages/api",
+  "packages/api", "crates/managers-template",
 ]
 
 [workspace.dependencies]
