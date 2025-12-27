@@ -91,7 +91,7 @@ pub fn GraphEditor(dot_input: Signal<String>) -> Element {
             DotDisplay {
                 dot: dot_input(),
                 error_signal: render_errors,
-                rough_enabled: rough_enabled,
+                rough: rough_enabled(),
             }
         }
         // Chat panel sits at the bottom, not absolute

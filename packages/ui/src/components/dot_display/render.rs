@@ -33,7 +33,7 @@ const HATCH_DEFAULT_OPACITY: f32 = 0.95;
 
 // ------------------------- Config -------------------------
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct SvgBuildConfig {
     pub classify_link: fn(&str) -> LinkKind,
     pub map_internal_route: Option<fn(&str) -> Option<String>>,
@@ -72,17 +72,6 @@ impl Default for RoughOptions {
             bowing: 1.0,
             fill_style: RoughFillStyle::Hachure,
         }
-    }
-}
-
-impl PartialEq for SvgBuildConfig {
-    fn eq(&self, other: &Self) -> bool {
-        // Compare the fields that should trigger a re-render
-        self.rough_style == other.rough_style
-            && self.strip_doctype == other.strip_doctype
-            && self.scale_to_fit == other.scale_to_fit
-            && self.rough_options == other.rough_options
-            && self.rough_use_custom_font == other.rough_use_custom_font
     }
 }
 

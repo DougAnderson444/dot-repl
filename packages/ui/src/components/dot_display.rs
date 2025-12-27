@@ -13,7 +13,7 @@ use crate::GVizProvider;
 pub fn DotDisplay(
     dot: String,
     error_signal: Signal<Option<RenderError>>,
-    rough_enabled: Signal<bool>,
+    rough: bool,
 ) -> Element {
     let mut svg_signal = use_signal(|| None::<String>);
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
@@ -76,18 +76,17 @@ pub fn DotDisplay(
 
             // Display current SVG if we have one, otherwise show loading
             if let Some(svg) = svg_signal.read().as_ref() {
-                let rough = rough_enabled();
-                let config = use_memo(move || SvgBuildConfig {
+                let config = SvgBuildConfig {
                     rough_style: rough,
                     ..Default::default()
-                });
+                };
 
                 rsx! {
                     div {
                         class: "w-full h-full overflow-auto",
                         GraphvizSvg {
                             svg_text: svg.clone(),
-                            config: config()
+                            config: config
                         }
                     }
                 }
