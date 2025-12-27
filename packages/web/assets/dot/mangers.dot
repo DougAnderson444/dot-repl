@@ -1,0 +1,129 @@
+digraph "ManagersTemplate" {
+    // ---------- Global graph attributes ----------
+    graph [
+        rankdir=LR,
+        bgcolor="#fdfdfd",
+        labelloc=top,
+        label="Manager's Template",
+        fontname="Mono",
+        fontsize=16,
+        pencolor="#666",
+        charset="UTF-8"
+    ];
+
+    // Default node attributes
+    node [
+        shape=ellipse,
+        fontname="Helvetica",
+        fontsize=12,
+        style=filled,
+        fillcolor="#D7F5D3",
+        color="#A5E1A6"
+    ];
+
+    // Default edge attributes
+    edge [
+        color="#666666",
+        arrowsize=0.9,
+        fontname="Helvetica",
+        fontsize=10
+    ];
+
+
+subgraph cluster_HR {
+            graph [label="People", style="dashed, rounded", color="#cc8888", fillcolor="#fffafa"];
+	People_0 [
+		shape=plain
+		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="2">
+			<tr> <td> <b>Stakeholders</b> </td> </tr>
+			<tr> <td>
+				<table border="0" cellborder="0" cellspacing="0" >
+					<tr> <td port="douglas" align="left" href="" >- Navigator</td> </tr>
+					<tr> <td port="rawi" align="left" >- AIML</td> </tr>
+					<tr> <td port="saads" align="left" >- Companion</td> </tr>
+				</table>
+			</td>
+            </tr>
+		</table>>
+	]
+
+	People [
+		shape=plain
+		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="2">
+			<tr> <td> <b>Co-Workers</b> </td> </tr>
+			<tr> <td>
+				<table border="0" cellborder="0" cellspacing="0" >
+					<tr> <td port="saad" align="left" >- Saad</td> </tr>
+					<tr> <td port="douglas" align="left" >- Douglas</td> </tr>
+					<tr> <td port="rawi" align="left" >- Rawi</td> </tr>
+				</table>
+			</td>
+            </tr>
+		</table>>
+	]
+}
+
+subgraph cluster_Work {
+        rankdir="TB";
+            graph [label="Work", style="dashed, rounded", color="#cc8888", fillcolor="#fffafa", newrank = true];
+
+	Production_0 [
+		shape=plain
+		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="0">
+			<tr> <td> <b>Production</b> </td> </tr>
+			<tr> <td>
+				<table border="0" cellborder="0" cellspacing="0" >
+					<tr> <td port="Homeport" align="left" >- Homeport</td> </tr>
+					<tr> <td port="Pathfinder" align="left" >- Pathfinder</td> </tr>
+				</table>
+			</td>
+            </tr>
+		</table>>
+	]
+
+	Projects_0 [
+		shape=plain
+		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="0">
+			<tr> <td> <b>Projects</b> </td> </tr>
+			<tr> <td>
+				<table border="0" cellborder="0" cellspacing="0" >
+					<tr> <td port="Navigator" align="left">Navigator</td> </tr>
+					<tr> <td port="Network" align="left">Network</td> </tr>
+					<tr> <td port="Companion" align="left">Companion</td> </tr>
+					<tr> <td port="Sequence" align="left" href="/generated.dot">Sequence</td> </tr>
+				</table>
+			</td>
+            </tr>
+		</table>>
+	]
+
+}
+
+subgraph cluster_Progress {
+            graph [label="Progress", style="dashed, rounded", color="#cc8888", fillcolor="#fffafa"];
+	Progress_0 [
+		shape=plain
+		label=<<table border="0" cellborder="1" cellspacing="0" cellpadding="0">
+			<tr> <td> <b>Status Reports</b> </td> </tr>
+			<tr> <td>
+				<table border="0" cellborder="0" cellspacing="0" >
+					<tr> <td port="Navigator" align="left" >- Navigator</td> </tr>
+					<tr> <td port="Network" align="left" >- Network</td> </tr>
+					<tr> <td port="Companion" align="left" >- Companion</td> </tr>
+				</table>
+			</td>
+            </tr>
+		</table>>
+	]
+}
+
+People:rawi -> Projects_0:Companion [penwidth=1, arrowsize=1];
+People:douglas -> Projects_0:Network
+People:saad -> Projects_0:Navigator
+
+Projects_0:Companion -> Progress_0:Companion
+Projects_0:Network -> Progress_0:Network
+Projects_0:Navigator -> Progress_0:Navigator
+Projects_0 -> Production_0 [style=dashed, constraint=false, label="finite → ongoing"];
+}
+
