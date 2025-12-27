@@ -5,11 +5,12 @@ members = [
   "packages/web",
   "packages/*",
   "packages/mobile",
-  "packages/api", "crates/managers-template",
+  "packages/api",
+  "crates/managers-template",
 ]
 
 [workspace.dependencies]
-dioxus = { version = "0.7.1" }
+dioxus = { version = "0.7.2" }
 base64 = "0.22.1"
 web-sys = { version = "0.3", features = ["Element", "Window"] }
 directories = "6.0.0"

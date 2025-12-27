@@ -17,4 +17,4 @@ build:
   dx bundle  --release --out-dir docs
 
 serve:
-  dx serve
+  dx serve --port 8081
