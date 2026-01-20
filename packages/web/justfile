@@ -10,11 +10,19 @@ install-tailwind:
 
 # Build CSS with watch for development
 watch-css:
+  cd ../..
   tailwindcss -i ./tailwind.css -o ./assets/tailwind.css --watch
+
+css:
+  cd ../..
+  tailwindcss -i ./tailwind.css -o ./assets/tailwind.css
 
 # Build the web app
 build:
-  dx bundle  --release --out-dir docs
+  dx bundle --release --out-dir docs
 
 serve:
+  cd ../..
+  tailwindcss -i ./tailwind.css -o ./assets/tailwind.css
+  cd packages/web
   dx serve --port 8081
