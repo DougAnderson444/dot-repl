@@ -35,8 +35,7 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    // Build cool things ✌️
-    let storage = storage::DesktopStorage::new().unwrap();
+    let storage = storage::GitStorage::new("dot_files").unwrap();
     let storage_provider = StorageProvider::new(storage.clone());
 
     // provide storage in context for all child elements
