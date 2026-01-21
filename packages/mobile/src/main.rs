@@ -1,9 +1,9 @@
 use dioxus::prelude::*;
-
+use dot_repl_mobile::MobileApp;
 use ui::Navbar;
-use views::{Blog, Home};
 
 mod views;
+use views::{Blog, Home};
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -15,21 +15,16 @@ enum Route {
     Blog { id: i32 },
 }
 
-const MAIN_CSS: Asset = asset!("/assets/main.css");
-
 fn main() {
     dioxus::launch(App);
 }
 
 #[component]
 fn App() -> Element {
-    // Build cool things ✌️
-
     rsx! {
-        // Global app resources
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-
-        Router::<Route> {}
+        MobileApp {
+            Router::<Route> {}
+        }
     }
 }
 

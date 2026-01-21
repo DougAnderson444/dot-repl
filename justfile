@@ -1,5 +1,5 @@
 web: css-web
-  dx serve --package web
+  dx serve --package dot-repl-web
 
 css-web:
   tailwindcss -i ./tailwind.css -o ./packages/web/assets/tailwind.css

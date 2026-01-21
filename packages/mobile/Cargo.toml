@@ -1,7 +1,9 @@
 [package]
-name = "mobile"
+name = "dot-repl-mobile"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
 
 [dependencies]
 dioxus = { workspace = true, features = ["router", "fullstack"] }

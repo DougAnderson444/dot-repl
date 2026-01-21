@@ -2002,6 +2002,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "dot-repl-mobile"
+version = "0.1.0"
+dependencies = [
+ "dioxus",
+ "ui",
+]
+
+[[package]]
+name = "dot-repl-web"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "dioxus",
+ "getrandom 0.3.4",
+ "gloo-storage",
+ "gloo-timers 0.3.0",
+ "thiserror 2.0.17",
+ "ui",
+ "url-escape",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "dpi"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3787,14 +3812,6 @@ dependencies = [
  "libc",
  "wasi 0.11.1+wasi-snapshot-preview1",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "mobile"
-version = "0.1.0"
-dependencies = [
- "dioxus",
- "ui",
 ]
 
 [[package]]
@@ -6965,23 +6982,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "226a9a91cd80a50449312fef0c75c23478fcecfcc4092bdebe1dc8e760ef521b"
 dependencies = [
  "wast 243.0.0",
-]
-
-[[package]]
-name = "web"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "dioxus",
- "getrandom 0.3.4",
- "gloo-storage",
- "gloo-timers 0.3.0",
- "thiserror 2.0.17",
- "ui",
- "url-escape",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
 ]
 
 [[package]]
