@@ -1,20 +1,9 @@
 //! A desktop application built with Dioxus that features routing and a navbar.
-mod graphvism_wrapper;
-mod storage;
-
-mod error;
-pub use error::Error;
-
 use dioxus::prelude::*;
-
-use ui::{GVizProvider, Navbar, StorageProvider};
+use dot_repl_desktop::DesktopApp;
+use ui::Navbar;
 use views::{Blog, GraphVizDesktopView, Home};
-
 mod views;
-
-use graphvizm::Graphvizm;
-
-const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -35,37 +24,13 @@ fn main() {
 
 #[component]
 fn App() -> Element {
-    let storage = storage::GitStorage::new("dot_files").unwrap();
-    let storage_provider = StorageProvider::new(storage.clone());
-
-    // provide storage in context for all child elements
-    use_context_provider(|| storage_provider);
-
-    // signal that will be saved to the context as None, until GViz is loaded
-    let gviz_signal = use_signal::<Option<GVizProvider>>(|| None);
-    let mut gviz_signal = use_context_provider(|| gviz_signal);
-
-    // Global rough_enabled state that persists across navigation
-    let rough_enabled = use_signal(|| false);
-    use_context_provider(|| rough_enabled);
-
-    // Create the Graphvizm instance once
-    use_hook(|| {
-        if let Ok(gviz) = Graphvizm::new() {
-            // set the signal
-            gviz_signal.set(Some(GVizProvider::new(
-                graphvism_wrapper::GraphvizmWrapper::from(gviz),
-            )));
-        }
-    });
-
     rsx! {
-        // Global app resources
-        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
-
-        div {
-            class: "h-screen flex flex-col",
-            Router::<Route> {}
+        DesktopApp {
+            path: "dot_files".to_string(),
+            div {
+                class: "h-screen flex flex-col",
+                Router::<Route> {}
+            }
         }
     }
 }
