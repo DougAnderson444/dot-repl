@@ -39,6 +39,8 @@ fn App() -> Element {
 /// which allows us to use the desktop-specific `Route` enum.
 #[component]
 fn DesktopNavbar() -> Element {
+    let navigator = use_navigator();
+
     rsx! {
         Navbar {
             Link {
@@ -49,6 +51,17 @@ fn DesktopNavbar() -> Element {
                 to: Route::Blog { id: 1 },
                 "Blog"
             }
+            button {
+                class: "font-sans px-4 py-1 text-neutral-200 bg-sky-600 hover:bg-sky-700 rounded-md",
+                onclick: move |_| navigator.go_back(),
+                "←"
+            }
+            button {
+                class: "font-sans px-4 py-1 text-neutral-200 bg-sky-600 hover:bg-sky-700 rounded-md",
+                onclick: move |_| navigator.go_forward(),
+                "→"
+            }
+
         }
 
         Outlet::<Route> {}
