@@ -1,8 +1,8 @@
 //! Native storage
 use crate::Error;
 use directories::ProjectDirs;
+use dot_repl_ui::PlatformStorage;
 use std::path::PathBuf;
-use ui::PlatformStorage;
 
 #[derive(Clone, Default)]
 pub struct DesktopStorage {

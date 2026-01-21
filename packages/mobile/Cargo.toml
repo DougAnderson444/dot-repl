@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 dioxus = { workspace = true, features = ["router", "fullstack"] }
-ui = { workspace = true }
+dot-repl-ui = { workspace = true }
 
 [features]
 default = []

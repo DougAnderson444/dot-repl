@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 dioxus = { workspace = true, features = ["router", "web"] }
-ui = { workspace = true }
+dot-repl-ui = { workspace = true }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { workspace = true, features = ["Element", "Window"] }

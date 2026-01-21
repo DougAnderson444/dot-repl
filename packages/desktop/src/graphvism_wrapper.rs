@@ -1,4 +1,5 @@
 //! Wrapper around Graphvizm so we can implement the ui::GraphVizable trait
+use dot_repl_ui as ui;
 use graphvizm::{ErrorLevel, Graphvizm, GraphvizmError};
 
 pub struct GraphvizmWrapper {

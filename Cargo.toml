@@ -17,7 +17,7 @@ directories = "6.0.0"
 thiserror = "2"
 
 # workspace
-ui = { path = "packages/ui" }
+dot-repl-ui = { path = "packages/ui" }
 api = { path = "packages/api" }
 
 # our release profile should be fast to compile and fast to run

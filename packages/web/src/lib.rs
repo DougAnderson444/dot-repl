@@ -9,7 +9,7 @@ mod storage;
 
 use dioxus::prelude::*;
 
-use ui::{GVizProvider, StorageProvider};
+use dot_repl_ui::{GVizProvider, StorageProvider};
 
 use gloo_timers::future::sleep;
 use std::time::Duration;
@@ -18,7 +18,6 @@ use web_sys::js_sys::Reflect;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
-
 
 #[component]
 pub fn WebApp(children: Element) -> Element {
@@ -84,3 +83,4 @@ pub fn WebApp(children: Element) -> Element {
         {children}
     }
 }
+

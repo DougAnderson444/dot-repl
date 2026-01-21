@@ -1,6 +1,6 @@
 use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine as _};
+use dot_repl_ui::PlatformStorage;
 use gloo_storage::{LocalStorage, Storage};
-use ui::PlatformStorage;
 
 #[derive(Clone)]
 pub struct WebStorage;

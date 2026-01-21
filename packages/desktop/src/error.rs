@@ -1,3 +1,5 @@
+use dot_repl_ui as ui;
+
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
     /// Failed to initialize the storage

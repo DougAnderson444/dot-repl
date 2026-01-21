@@ -5,6 +5,8 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{js_sys, Element};
 
+use dot_repl_ui as ui;
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = window, js_name = "viz_instance")]
@@ -27,13 +29,13 @@ pub enum VizError {
     RenderError { message: String, line: Option<u32> },
 }
 
-impl From<VizError> for ui::Error {
+impl From<VizError> for dot_repl_ui::Error {
     fn from(e: VizError) -> Self {
         match e {
             VizError::RenderError { message, line } => {
-                ui::Error::DotRenderError(ui::error::RenderError {
-                    errors: vec![ui::error::ErrorInfo {
-                        level: ui::error::ErrorLevel::Error,
+                dot_repl_ui::Error::DotRenderError(dot_repl_ui::error::RenderError {
+                    errors: vec![dot_repl_ui::error::ErrorInfo {
+                        level: dot_repl_ui::error::ErrorLevel::Error,
                         message,
                         line,
                     }],
@@ -46,50 +48,49 @@ impl From<VizError> for ui::Error {
 impl GViz {
     pub async fn new() -> Result<Self, VizError> {
         let promise = viz_instance();
-        let js_instance = JsFuture::from(promise).await.map_err(|e| {
-            VizError::RenderError {
+        let js_instance = JsFuture::from(promise)
+            .await
+            .map_err(|e| VizError::RenderError {
                 message: format!("Failed to create Viz instance: {:?}", e),
                 line: None,
-            }
-        })?;
+            })?;
         let instance: Viz = js_instance.into();
         Ok(Self { instance })
     }
 
     pub fn render_dot(&self, dot: &str) -> Result<String, VizError> {
         let element = self.instance.render_svg_element(dot);
-        element
-            .map(|el| el.outer_html())
-            .map_err(|e| {
-                // Extract clean error message from JavaScript Error object
-                let message = if let Some(err) = e.dyn_ref::<js_sys::Error>() {
-                    err.message().as_string().unwrap_or_else(|| format!("{:?}", e))
-                } else {
-                    format!("{:?}", e)
-                };
-                
-                // Extract line number from message (e.g., "syntax error in line 3")
-                let line = extract_line_number(&message);
-                
-                VizError::RenderError { message, line }
-            })
+        element.map(|el| el.outer_html()).map_err(|e| {
+            // Extract clean error message from JavaScript Error object
+            let message = if let Some(err) = e.dyn_ref::<js_sys::Error>() {
+                err.message()
+                    .as_string()
+                    .unwrap_or_else(|| format!("{:?}", e))
+            } else {
+                format!("{:?}", e)
+            };
+
+            // Extract line number from message (e.g., "syntax error in line 3")
+            let line = extract_line_number(&message);
+
+            VizError::RenderError { message, line }
+        })
     }
 }
 
 /// Extract line number from error message
 fn extract_line_number(msg: &str) -> Option<u32> {
     // Look for "line" followed by digits
-    msg.find("line")
-        .and_then(|pos| {
-            let after = &msg[pos + 4..];
-            after
-                .chars()
-                .skip_while(|c| !c.is_ascii_digit())
-                .take_while(|c| c.is_ascii_digit())
-                .collect::<String>()
-                .parse::<u32>()
-                .ok()
-        })
+    msg.find("line").and_then(|pos| {
+        let after = &msg[pos + 4..];
+        after
+            .chars()
+            .skip_while(|c| !c.is_ascii_digit())
+            .take_while(|c| c.is_ascii_digit())
+            .collect::<String>()
+            .parse::<u32>()
+            .ok()
+    })
 }
 
 impl ui::GraphVizable for GViz {

@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 dioxus = { workspace = true, features = ["router"] }
-ui = { workspace = true, features = ["desktop"] }
+dot-repl-ui = { workspace = true, features = ["desktop"] }
 base64.workspace = true
 directories.workspace = true
 thiserror.workspace = true

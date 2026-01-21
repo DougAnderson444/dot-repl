@@ -1,7 +1,7 @@
 //! A desktop application built with Dioxus that features routing and a navbar.
 use dioxus::prelude::*;
 use dot_repl_desktop::DesktopApp;
-use ui::Navbar;
+use dot_repl_ui::Navbar;
 use views::{Blog, GraphVizDesktopView, Home};
 mod views;
 

@@ -5,8 +5,8 @@ pub mod graphvism_wrapper;
 pub mod storage;
 
 use dioxus::prelude::*;
+use dot_repl_ui::{GVizProvider, StorageProvider};
 use graphvizm::Graphvizm;
-use ui::{GVizProvider, StorageProvider};
 
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
