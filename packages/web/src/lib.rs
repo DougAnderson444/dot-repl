@@ -17,7 +17,6 @@ use wasm_bindgen::JsValue;
 use web_sys::js_sys::Reflect;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
-const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[component]
 pub fn WebApp(children: Element) -> Element {
@@ -64,7 +63,6 @@ pub fn WebApp(children: Element) -> Element {
     rsx! {
         // Global app resources
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link {
             rel: "stylesheet",
             href: "https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap"
@@ -83,4 +81,3 @@ pub fn WebApp(children: Element) -> Element {
         {children}
     }
 }
-

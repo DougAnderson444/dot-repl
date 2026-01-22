@@ -1,31 +1,26 @@
-//! This module contains the component that looks up the data by it's key,
-//! and displays the graph.
-//!
-//! We have a system which allows user to take starter dot files and cusotmize
-//! them, which are saved to their storage system.
-//!
-//! So when we look up a key,the following stepsneed to happen in this order:
-//! 1. Check if the key exists in storage, if so, load it.
-//! 2. If not available from local storage, try the static default template, if name exists.
-//! 3. If the default static key and data doesn't exists, create
-//!    the data in dynamic storage. This allows users to creates a link to a
-//!    new file in their system and build out their hyperlinks.
+//! This module contains the component that looks up the data by its key
+//! and displays the graph. This view is a reference implementation of how to
+//! use the components from this library with routing.
+use crate::{
+    components::{CodeEditor, DotDisplay, ErrorOverlay},
+    hooks::use_graph_editor_logic,
+    platform, StorageProvider,
+};
 use dioxus::prelude::*;
 
-use crate::{components::GraphEditor, platform, StorageProvider};
-
 static KITCHEN_SINK: &str = include_str!("../../assets/dot/kitchen_sink.dot");
+const TAILWIND_CSS: Asset = asset!("../../assets/tailwind.css");
 
 #[component]
-pub fn GraphView<R>(route: R, key_path: String) -> Element
+pub fn GraphView<R>(route: R, key_path: String, rough_enabled: Signal<bool>) -> Element
 where
     R: Routable + Clone + PartialEq,
 {
     let mut dot_input = use_signal(String::new);
     let storage = use_context::<StorageProvider>();
+    let mut editor = use_graph_editor_logic();
 
-    let p = key_path.to_string();
-    let decoded = url_escape::decode(&p).to_string();
+    let decoded = url_escape::decode(&key_path).to_string();
 
     let storage_clone = storage.clone();
     let decoded_clone = decoded.clone();
@@ -36,8 +31,6 @@ where
             .load(&decoded_clone)
             .map(|data| String::from_utf8_lossy(&data).to_string())
             .unwrap_or_else(|_| {
-                // THis file doesn't exist in storage, so we either load the static default
-                // or create a new file with starter content.
                 let d = if decoded_clone == "kitchen_sink.dot" {
                     KITCHEN_SINK.to_string()
                 } else {
@@ -49,7 +42,7 @@ where
                 d
             });
 
-        dot_input.set(dot.clone());
+        dot_input.set(dot);
     });
 
     // Add auto-save effect with debouncing
@@ -63,7 +56,6 @@ where
 
         let storage_clone = storage.clone();
         let decoded_clone = decoded.clone();
-        // Debounce: wait 500ms after last edit before saving
         spawn(async move {
             platform::sleep(std::time::Duration::from_millis(500)).await;
 
@@ -76,6 +68,57 @@ where
     });
 
     rsx! {
-        GraphEditor { dot_input }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        div {
+            class: "flex h-full overflow-hidden",
+
+            // Left panel: collapsible
+            if !(editor.collapsed)() {
+                div {
+                    class: "flex flex-col flex-1 bg-gray-50 border-r border-gray-200 overflow-none w-1/2 max-w-[800px]",
+                    h2 {
+                        class: "text-xl font-bold text-gray-800 p-2 border-b border-gray-200 flex justify-between items-center",
+                        "DOT Source"
+                        button {
+                            class: "ml-2 px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded",
+                            onclick: move |_| editor.collapsed.set(true),
+                            "⟨⟨⟨⟨"
+                        }
+                    }
+                    CodeEditor {
+                        value: dot_input(),
+                        oninput: move |new_value: String| dot_input.set(new_value),
+                        error_lines: (editor.error_lines)(),
+                        placeholder: "Enter your DOT graph here...".to_string()
+                    }
+                }
+            } else {
+                // Collapsed: show expand button
+                div {
+                    class: "flex flex-col text-xl font-bold bg-gray-50 border-r border-gray-200 w-[32px]",
+                    button {
+                        class: "px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded mt-4 relative",
+                        onclick: move |_| editor.collapsed.set(false),
+                        "⟩⟩⟩⟩"
+                    }
+                }
+            }
+
+            // Right panel: Preview
+            div {
+                class: "flex flex-col bg-white overflow-auto flex-1 relative",
+                ErrorOverlay {
+                    errors: editor.render_errors
+                }
+                div {
+                    class: "flex-1 bg-white overflow-auto",
+                    DotDisplay {
+                        dot: dot_input(),
+                        error_signal: editor.render_errors,
+                        rough: rough_enabled(),
+                    }
+                }
+            }
+        }
     }
 }

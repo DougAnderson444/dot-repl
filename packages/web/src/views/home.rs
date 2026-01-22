@@ -1,1 +1,1 @@
-pub use ui::views::Home;
+pub use dot_repl_ui::views::Home;

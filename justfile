@@ -7,6 +7,9 @@ css-web:
 css-web-watch:
   tailwindcss -i ./tailwind.css -o ./packages/web/assets/tailwind.css --watch
 
+ui-css:
+  tailwindcss -i ./tailwind.css -o ./packages/ui/assets/tailwind.css
+
 desktop: css-desktop
   cd packages/desktop
   dx serve --package dot-repl-desktop

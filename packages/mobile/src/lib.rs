@@ -1,10 +1,8 @@
 use dioxus::prelude::*;
 
-use ui::Navbar;
-
+use dot_repl_ui::Navbar;
 
 const MAIN_CSS: Asset = asset!("/assets/main.css");
-
 
 #[component]
 pub fn MobileApp(children: Element) -> Element {
@@ -17,4 +15,3 @@ pub fn MobileApp(children: Element) -> Element {
         {children}
     }
 }
-

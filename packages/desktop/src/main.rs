@@ -5,6 +5,8 @@ use dot_repl_ui::Navbar;
 use views::{Blog, GraphVizDesktopView, Home};
 mod views;
 
+const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
@@ -24,7 +26,12 @@ fn main() {
 
 #[component]
 fn App() -> Element {
+    // Global rough_enabled state that persists across navigation
+    let rough_enabled = use_signal(|| false);
+    use_context_provider(|| rough_enabled);
+
     rsx! {
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         DesktopApp {
             path: "dot_files".to_string(),
             div {
@@ -40,6 +47,8 @@ fn App() -> Element {
 #[component]
 fn DesktopNavbar() -> Element {
     let navigator = use_navigator();
+    let route = use_route::<Route>();
+    let mut rough_enabled = use_context::<Signal<bool>>();
 
     rsx! {
         Navbar {
@@ -61,7 +70,23 @@ fn DesktopNavbar() -> Element {
                 onclick: move |_| navigator.go_forward(),
                 "→"
             }
-
+            label {
+                class: "flex items-center gap-2 text-sm text-neutral-200",
+                input {
+                    r#type: "checkbox",
+                    checked: rough_enabled(),
+                    onchange: move |_| {
+                        rough_enabled.toggle()
+                    },
+                }
+                "Rough Style"
+            }
+            if let Route::GraphVizDesktopView { key_path } = route {
+                div {
+                    class: "m-4 font-mono text-xs text-gray-500",
+                    "/{key_path}"
+                }
+            }
         }
 
         Outlet::<Route> {}

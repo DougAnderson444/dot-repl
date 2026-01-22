@@ -1,12 +1,14 @@
 //! Web-specific entry point
 
 use dioxus::prelude::*;
+use dot_repl_ui::components::fonts::ARCHITECTS_DAUGHTER_FAMILY;
+use dot_repl_ui::Navbar;
 use dot_repl_web::WebApp;
-use ui::components::fonts::ARCHITECTS_DAUGHTER_FAMILY;
-use ui::Navbar;
 
 mod views;
 use views::{Blog, GraphVizWebView, Home};
+
+const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -28,6 +30,7 @@ fn main() {
 #[component]
 fn App() -> Element {
     rsx! {
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         WebApp {
             div {
                 class: "h-screen flex flex-col",

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-dioxus = { workspace = true }
+dioxus = { workspace = true, features = ["router"] }
 dioxus-router = "0.7.1"
 # api = { workspace = true }
 roxmltree = "0.21.1"

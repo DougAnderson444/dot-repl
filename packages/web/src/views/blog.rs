@@ -1,6 +1,6 @@
 use crate::Route;
 use dioxus::prelude::*;
-use ui::views::BlogView;
+use dot_repl_ui::views::BlogView;
 
 #[component]
 pub fn Blog(id: i32) -> Element {

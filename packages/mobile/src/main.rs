@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use dot_repl_mobile::MobileApp;
-use ui::Navbar;
+use dot_repl_ui::Navbar;
 
 mod views;
 use views::{Blog, Home};

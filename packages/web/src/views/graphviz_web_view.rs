@@ -1,6 +1,6 @@
 use crate::Route;
 use dioxus::prelude::*;
-use ui::views::GraphView;
+use dot_repl_ui::views::GraphView;
 
 /// GraphView is generic over R, but we need to set R to route here as it's only
 /// used in the top level.
