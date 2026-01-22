@@ -29,6 +29,9 @@ fn main() {
 
 #[component]
 fn App() -> Element {
+    let rough_enabled = use_signal(|| false);
+    use_context_provider(|| rough_enabled);
+
     rsx! {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         WebApp {
@@ -44,6 +47,7 @@ fn App() -> Element {
 /// which allows us to use the web-specific `Route` enum.
 #[component]
 fn WebNavbar() -> Element {
+    let mut rough_enabled = use_context::<Signal<bool>>();
     rsx! {
         div {
             style: "font-family: {ARCHITECTS_DAUGHTER_FAMILY}",
@@ -56,6 +60,17 @@ fn WebNavbar() -> Element {
                 Link {
                     to: Route::Blog { id: 1 },
                     "Blog"
+                }
+                label {
+                    class: "flex items-center gap-2 text-sm text-neutral-200",
+                    input {
+                        r#type: "checkbox",
+                        checked: rough_enabled(),
+                        onchange: move |_| {
+                            rough_enabled.toggle()
+                        },
+                    }
+                    "Rough Style"
                 }
             }
         }

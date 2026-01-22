@@ -7,8 +7,9 @@ use dot_repl_ui::views::GraphView;
 #[component]
 pub fn GraphVizWebView(key_path: String) -> Element {
     let route = use_route::<Route>();
+    let rough_enabled = use_context::<Signal<bool>>();
 
     rsx! {
-        GraphView { route, key_path }
+        GraphView { route, key_path, rough_enabled }
     }
 }
