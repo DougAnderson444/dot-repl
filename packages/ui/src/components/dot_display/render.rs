@@ -113,9 +113,11 @@ struct SvgAttrs {
     style: Option<String>,
     transform: Option<String>,
     fill: Option<String>,
+    fill_opacity: Option<String>,
     stroke: Option<String>,
     stroke_width: Option<String>,
     stroke_dasharray: Option<String>,
+    stroke_opacity: Option<String>,
     font_size: Option<String>,
     font_family: Option<String>,
     font_weight: Option<String>,
@@ -162,9 +164,11 @@ fn collect_attrs(node: Node) -> SvgAttrs {
             (None, "style") => sa.style = Some(value),
             (None, "transform") => sa.transform = Some(value),
             (None, "fill") => sa.fill = Some(value),
+            (None, "fill-opacity") => sa.fill_opacity = Some(value),
             (None, "stroke") => sa.stroke = Some(value),
             (None, "stroke-width") => sa.stroke_width = Some(value),
             (None, "stroke-dasharray") => sa.stroke_dasharray = Some(value),
+            (None, "stroke-opacity") => sa.stroke_opacity = Some(value),
             (None, "font-size") => sa.font_size = Some(value),
             (None, "font-family") => sa.font_family = Some(value),
             (None, "font-weight") => sa.font_weight = Some(value),
@@ -681,6 +685,7 @@ fn build_node(
                 dx: attrs.dx,
                 dy: attrs.dy,
                 fill: attrs.fill,
+                "fill-opacity": attrs.fill_opacity,
                 "font-size": attrs.font_size,
                 "font-family": attrs.font_family,
                 "font-weight": attrs.font_weight,
@@ -761,9 +766,11 @@ fn build_node(
                 class: attrs.class,
                 points: attrs.points,
                 fill: attrs.fill,
+                "fill-opacity": attrs.fill_opacity,
                 stroke: attrs.stroke,
                 "stroke-width": attrs.stroke_width,
                 "stroke-dasharray": attrs.stroke_dasharray,
+                "stroke-opacity": attrs.stroke_opacity,
                 style: attrs.style,
             }
         },
@@ -807,9 +814,11 @@ fn default_path(attrs: &SvgAttrs) -> Element {
             class: attrs.class.clone(),
             d: attrs.d.clone(),
             fill: attrs.fill.clone(),
+            "fill-opacity": attrs.fill_opacity.clone(),
             stroke: attrs.stroke.clone(),
             "stroke-width": attrs.stroke_width.clone(),
             "stroke-dasharray": attrs.stroke_dasharray.clone(),
+            "stroke-opacity": attrs.stroke_opacity.clone(),
             style: attrs.style.clone(),
         }
     }
@@ -827,9 +836,11 @@ fn default_rect(attrs: &SvgAttrs, children: &[Element]) -> Element {
             rx: attrs.rx.clone(),
             ry: attrs.ry.clone(),
             fill: attrs.fill.clone(),
+            "fill-opacity": attrs.fill_opacity.clone(),
             stroke: attrs.stroke.clone(),
             "stroke-width": attrs.stroke_width.clone(),
             "stroke-dasharray": attrs.stroke_dasharray.clone(),
+            "stroke-opacity": attrs.stroke_opacity.clone(),
             style: attrs.style.clone(),
             for child in children { {child.clone()} }
         }
@@ -845,9 +856,11 @@ fn default_circle(attrs: &SvgAttrs) -> Element {
             cy: attrs.cy.clone(),
             r: attrs.r.clone(),
             fill: attrs.fill.clone(),
+            "fill-opacity": attrs.fill_opacity.clone(),
             stroke: attrs.stroke.clone(),
             "stroke-width": attrs.stroke_width.clone(),
             "stroke-dasharray": attrs.stroke_dasharray.clone(),
+            "stroke-opacity": attrs.stroke_opacity.clone(),
             style: attrs.style.clone(),
         }
     }
@@ -863,9 +876,11 @@ fn default_ellipse(attrs: &SvgAttrs) -> Element {
             rx: attrs.rx.clone(),
             ry: attrs.ry.clone(),
             fill: attrs.fill.clone(),
+            "fill-opacity": attrs.fill_opacity.clone(),
             stroke: attrs.stroke.clone(),
             "stroke-width": attrs.stroke_width.clone(),
             "stroke-dasharray": attrs.stroke_dasharray.clone(),
+            "stroke-opacity": attrs.stroke_opacity.clone(),
             style: attrs.style.clone(),
         }
     }
@@ -878,9 +893,11 @@ fn default_polygon(attrs: &SvgAttrs) -> Element {
             class: attrs.class.clone(),
             points: attrs.points.clone(),
             fill: attrs.fill.clone(),
+            "fill-opacity": attrs.fill_opacity.clone(),
             stroke: attrs.stroke.clone(),
             "stroke-width": attrs.stroke_width.clone(),
             "stroke-dasharray": attrs.stroke_dasharray.clone(),
+            "stroke-opacity": attrs.stroke_opacity.clone(),
             style: attrs.style.clone(),
         }
     }
