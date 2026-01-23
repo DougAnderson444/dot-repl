@@ -8,7 +8,17 @@ dioxus = { workspace = true, features = ["router", "web"] }
 dot-repl-ui = { workspace = true }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
-web-sys = { workspace = true, features = ["Element", "Window"] }
+js-sys = "0.3"
+serde-wasm-bindgen = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+web-sys = { workspace = true, features = [
+  "Element",
+  "Window",
+  "Request",
+  "RequestInit",
+  "RequestMode",
+  "Response",
+] }
 gloo-timers = { version = "0.3", features = ["futures"] }
 base64.workspace = true
 gloo-storage = "0.3.0"

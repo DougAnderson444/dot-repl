@@ -6,6 +6,8 @@ mod bindgen;
 use bindgen::GViz;
 
 mod storage;
+pub use storage::WebStorage;
+pub mod asset_loader;
 
 use dioxus::prelude::*;
 
