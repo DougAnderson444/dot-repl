@@ -9,6 +9,7 @@ mod views;
 use views::{Blog, GraphVizWebView, Home};
 
 const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+const FAVICON: Asset = asset!("/assets/favicon.ico");
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -34,6 +35,7 @@ fn App() -> Element {
 
     rsx! {
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "icon", href: FAVICON }
         WebApp {
             div {
                 class: "h-screen flex flex-col",
