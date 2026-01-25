@@ -1,24 +1,26 @@
 use dioxus::logger::tracing;
+use dioxus::prelude::*;
 use dot_repl_ui::PlatformStorage;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{window, Request, RequestInit, RequestMode, Response};
 
 /// Pre-populate LocalStorage with DOT files from static assets
-/// Discovers files by fetching /dots/manifest.json
-pub async fn preload_dot_files(storage: &impl PlatformStorage) -> Result<usize, String> {
-    tracing::info!("Fetching DOT files manifest...");
+/// Uses Dioxus asset! macro to get the correct folder path with hash
+/// Fetches manifest.json to discover available files
+pub async fn preload_dot_files(
+    storage: &impl PlatformStorage,
+    dots_folder: &str,
+) -> Result<usize, String> {
+    tracing::info!("Fetching DOT files manifest from {}...", dots_folder);
 
-    // Fetch the manifest to discover available files
-    let manifest_url = "/dots/manifest.json";
+    // Fetch the manifest.json to discover available files
+    let manifest_url = format!("{}/manifest.json", dots_folder);
 
-    let filenames: Vec<String> = match fetch_json(manifest_url).await {
+    let filenames: Vec<String> = match fetch_json(&manifest_url).await {
         Ok(files) => files,
         Err(e) => {
-            tracing::warn!(
-                "Failed to fetch manifest: {}, falling back to empty list",
-                e
-            );
+            tracing::warn!("Failed to fetch manifest: {}, no files to preload", e);
             return Ok(0);
         }
     };
@@ -34,16 +36,31 @@ pub async fn preload_dot_files(storage: &impl PlatformStorage) -> Result<usize, 
             continue;
         }
 
-        // Fetch from /dots/ directory
-        let url = format!("/dots/{}", filename);
+        // Fetch from /assets/dots/ directory
+        let url = format!("{}/{}", dots_folder, filename);
 
         match fetch_binary(&url).await {
             Ok(bytes) => {
-                if let Err(e) = storage.save(&filename, &bytes) {
-                    tracing::warn!("Failed to save {}: {}", filename, e);
+                // Check if we should update: either doesn't exist or content differs
+                let should_update = if storage.exists(&filename) {
+                    // Load existing and compare
+                    match storage.load(&filename) {
+                        Ok(existing) => existing != bytes,
+                        Err(_) => true, // Error reading, update it
+                    }
                 } else {
-                    tracing::info!("Loaded {} ({} bytes)", filename, bytes.len());
-                    loaded_count += 1;
+                    true // Doesn't exist, load it
+                };
+
+                if should_update {
+                    if let Err(e) = storage.save(&filename, &bytes) {
+                        tracing::warn!("Failed to save {}: {}", filename, e);
+                    } else {
+                        tracing::info!("Loaded {} ({} bytes)", filename, bytes.len());
+                        loaded_count += 1;
+                    }
+                } else {
+                    tracing::debug!("Skipping {}: unchanged in storage", filename);
                 }
             }
             Err(e) => {
@@ -56,8 +73,8 @@ pub async fn preload_dot_files(storage: &impl PlatformStorage) -> Result<usize, 
     Ok(loaded_count)
 }
 
-/// Fetch JSON from a URL using web-sys fetch API
-async fn fetch_json<T: serde::de::DeserializeOwned>(url: &str) -> Result<T, String> {
+/// Fetch JSON array from a URL using web-sys fetch API
+async fn fetch_json(url: &str) -> Result<Vec<String>, String> {
     let window = window().ok_or("No window object")?;
 
     let opts = RequestInit::new();
