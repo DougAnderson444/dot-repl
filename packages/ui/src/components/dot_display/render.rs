@@ -25,13 +25,6 @@ pub enum LinkKind {
     None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum LinkIconType {
-    External,
-    Internal,
-    Fragment,
-}
-
 const XLINK_NS: &str = "http://www.w3.org/1999/xlink";
 const XML_NS: &str = "http://www.w3.org/XML/1998/namespace";
 
@@ -985,24 +978,6 @@ fn default_polygon(attrs: &SvgAttrs) -> Element {
     }
 }
 
-fn create_link_icon(link_type: LinkIconType) -> Element {
-    let (icon, color) = match link_type {
-        LinkIconType::External => ("🔗", "#1e88e5"),
-        LinkIconType::Internal => ("↗", "#43a047"),
-        LinkIconType::Fragment => ("#", "#fb8c00"),
-    };
-
-    rsx! {
-        text {
-            class: "link-icon",
-            "font-size": "10",
-            fill: color,
-            opacity: "0.7",
-            dx: "3",
-            "{icon}"
-        }
-    }
-}
 // ------------------------- Anchor -------------------------
 
 fn build_anchor(
@@ -1056,7 +1031,6 @@ fn build_anchor(
                             },
                             { tooltip_node }
                             for child in children { {child} }
-                            { create_link_icon(LinkIconType::External) }
                         }
                     }
                 }
@@ -1079,7 +1053,6 @@ fn build_anchor(
                             },
                             { tooltip_node }
                             for child in children { {child} }
-                            { create_link_icon(LinkIconType::Internal) }
                         }
                     }
                 }
@@ -1103,7 +1076,6 @@ fn build_anchor(
                             },
                             { tooltip_node }
                             for child in children { {child} }
-                            { create_link_icon(LinkIconType::Fragment) }
                         }
                     }
                 }
