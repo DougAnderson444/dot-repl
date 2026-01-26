@@ -62,7 +62,7 @@ pub async fn preload_dot_files(
                         loaded_count += 1;
                     }
                 } else {
-                    tracing::debug!("Skipping {}: unchanged in storage", filename);
+                    tracing::info!("Skipping {}: unchanged in storage", filename);
                 }
             }
             Err(e) => {
