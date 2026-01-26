@@ -39,6 +39,8 @@ pub async fn preload_dot_files(
         // Fetch from /assets/dots/ directory
         let url = format!("{}/{}", dots_folder, filename);
 
+        tracing::info!("Fetching DOT url {}", url);
+
         match fetch_string(&url).await {
             Ok(content) => {
                 // Check if we should update: either doesn't exist or content differs
