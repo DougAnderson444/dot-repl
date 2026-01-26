@@ -40,3 +40,9 @@ impl WebStorage {
         WebStorage
     }
 }
+
+impl Default for WebStorage {
+    fn default() -> Self {
+        Self::new()
+    }
+}

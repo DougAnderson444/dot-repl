@@ -39,13 +39,13 @@ pub async fn preload_dot_files(
         // Fetch from /assets/dots/ directory
         let url = format!("{}/{}", dots_folder, filename);
 
-        match fetch_binary(&url).await {
-            Ok(bytes) => {
+        match fetch_string(&url).await {
+            Ok(content) => {
                 // Check if we should update: either doesn't exist or content differs
                 let should_update = if storage.exists(&filename) {
                     // Load existing and compare
                     match storage.load(&filename) {
-                        Ok(existing) => existing != bytes,
+                        Ok(existing) => existing != content.as_bytes(),
                         Err(_) => true, // Error reading, update it
                     }
                 } else {
@@ -53,10 +53,10 @@ pub async fn preload_dot_files(
                 };
 
                 if should_update {
-                    if let Err(e) = storage.save(&filename, &bytes) {
+                    if let Err(e) = storage.save(&filename, content.as_bytes()) {
                         tracing::warn!("Failed to save {}: {}", filename, e);
                     } else {
-                        tracing::info!("Loaded {} ({} bytes)", filename, bytes.len());
+                        tracing::info!("Loaded {} ({} bytes)", filename, content.len());
                         loaded_count += 1;
                     }
                 } else {
@@ -106,36 +106,63 @@ async fn fetch_json(url: &str) -> Result<Vec<String>, String> {
     serde_wasm_bindgen::from_value(json).map_err(|e| format!("Failed to deserialize: {:?}", e))
 }
 
-/// Fetch binary data from a URL using web-sys fetch API
-async fn fetch_binary(url: &str) -> Result<Vec<u8>, String> {
-    let window = window().ok_or("No window object")?;
+// /// Fetch binary data from a URL using web-sys fetch API
+// async fn fetch_binary(url: &str) -> Result<Vec<u8>, String> {
+//     let window = window().ok_or("No window object")?;
+//
+//     let opts = RequestInit::new();
+//     opts.set_method("GET");
+//     opts.set_mode(RequestMode::Cors);
+//
+//     let request = Request::new_with_str_and_init(url, &opts)
+//         .map_err(|e| format!("Failed to create request: {:?}", e))?;
+//
+//     let resp_value = JsFuture::from(window.fetch_with_request(&request))
+//         .await
+//         .map_err(|e| format!("Fetch failed: {:?}", e))?;
+//
+//     let resp: Response = resp_value
+//         .dyn_into()
+//         .map_err(|_| "Response is not a Response object")?;
+//
+//     if !resp.ok() {
+//         return Err(format!("HTTP error: {}", resp.status()));
+//     }
+//
+//     let array_buffer = JsFuture::from(
+//         resp.array_buffer()
+//             .map_err(|e| format!("Failed to get array buffer: {:?}", e))?,
+//     )
+//     .await
+//     .map_err(|e| format!("Failed to read array buffer: {:?}", e))?;
+//
+//     let uint8_array = js_sys::Uint8Array::new(&array_buffer);
+//     Ok(uint8_array.to_vec())
+// }
 
+// Fetch String data from a URL using web-sys fetch API
+async fn fetch_string(url: &str) -> Result<String, String> {
+    let window = window().ok_or("No window object")?;
     let opts = RequestInit::new();
     opts.set_method("GET");
     opts.set_mode(RequestMode::Cors);
-
     let request = Request::new_with_str_and_init(url, &opts)
         .map_err(|e| format!("Failed to create request: {:?}", e))?;
-
     let resp_value = JsFuture::from(window.fetch_with_request(&request))
         .await
         .map_err(|e| format!("Fetch failed: {:?}", e))?;
-
     let resp: Response = resp_value
         .dyn_into()
         .map_err(|_| "Response is not a Response object")?;
-
     if !resp.ok() {
         return Err(format!("HTTP error: {}", resp.status()));
     }
-
-    let array_buffer = JsFuture::from(
-        resp.array_buffer()
-            .map_err(|e| format!("Failed to get array buffer: {:?}", e))?,
+    let text = JsFuture::from(
+        resp.text()
+            .map_err(|e| format!("Failed to get text: {:?}", e))?,
     )
     .await
-    .map_err(|e| format!("Failed to read array buffer: {:?}", e))?;
-
-    let uint8_array = js_sys::Uint8Array::new(&array_buffer);
-    Ok(uint8_array.to_vec())
+    .map_err(|e| format!("Failed to read text: {:?}", e))?;
+    text.as_string()
+        .ok_or("Failed to convert text to string".to_string())
 }
