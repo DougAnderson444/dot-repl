@@ -654,12 +654,11 @@ fn build_node(
         .collect();
 
     let link_style = r#"
-    g[data-link-type="external"] text { fill: #1e88e5; }
-    g[data-link-type="internal"] text { fill: #43a047; }
-    g[data-link-type="fragment"] text { fill: #fb8c00; }
-    g[data-link-type] text { text-decoration: underline; }
-    g[data-link-type]:hover text { opacity: 0.7; }
-"#;
+    g[data-link-type="external"] text { fill: #1e88e5 !important; }
+    g[data-link-type="internal"] text { fill: #43a047 !important; }
+    g[data-link-type="fragment"] text { fill: #fb8c00 !important; }
+    g[data-link-type] text { text-decoration: underline !important; }
+    g[data-link-type]:hover text { opacity: 0.7; }"#;
 
     let custom_style = if cfg.rough_style && cfg.rough_use_custom_font {
         if let Some(css) = cfg.rough_embed_font_data {
