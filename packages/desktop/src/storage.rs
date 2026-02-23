@@ -61,10 +61,9 @@ impl DesktopStorage {
         } else {
             ""
         };
-        let project_dirs = ProjectDirs::from("io", "peerpiper", &format!("dot-repl{}", suffix))
-            .ok_or(Error::StorageFailure(
-                "Failed to get project directories".to_string(),
-            ))?;
+        let project_dirs = ProjectDirs::from("io", "dot-repl", &format!("{}", suffix)).ok_or(
+            Error::StorageFailure("Failed to get project directories".to_string()),
+        )?;
 
         let data_dir = project_dirs.data_dir().to_path_buf();
 
