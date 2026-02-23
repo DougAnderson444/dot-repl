@@ -17,15 +17,15 @@ pub fn CodeEditor(
         // Calculate how many lines we need (based on content + some buffer)
         let line_count = value.lines().count().max(20) + 10;
         let line_height = 1.5; // em
-        
+
         // Build gradient stops for each line
         let mut gradient_parts = vec![];
-        
+
         for line_num in 1..=line_count {
             let line_u32 = line_num as u32;
             let start = (line_num - 1) as f32 * line_height;
             let end = line_num as f32 * line_height;
-            
+
             if error_lines.contains(&line_u32) {
                 // Highlighted line - yellow with opacity
                 gradient_parts.push(format!("rgba(250, 204, 21, 0.3) {}em", start));
@@ -36,7 +36,7 @@ pub fn CodeEditor(
                 gradient_parts.push(format!("transparent {}em", end));
             }
         }
-        
+
         format!(
             "background: linear-gradient(to bottom, {});",
             gradient_parts.join(", ")
@@ -46,7 +46,7 @@ pub fn CodeEditor(
     rsx! {
         div {
             class: "flex-1 relative",
-            
+
             // Error indicators in gutter
             if !error_lines.is_empty() {
                 div {
@@ -61,7 +61,7 @@ pub fn CodeEditor(
                     }
                 }
             }
-            
+
             // Textarea with line highlighting
             textarea {
                 class: "w-full h-full font-mono text-sm p-4 pl-12 border-none outline-none resize-none overflow-auto",
@@ -69,7 +69,7 @@ pub fn CodeEditor(
                 value: "{value}",
                 placeholder: "{placeholder}",
                 spellcheck: false,
-                
+
                 oninput: move |e| {
                     oninput.call(e.value());
                 },

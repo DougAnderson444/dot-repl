@@ -1,6 +1,6 @@
 //! A "headless" hook containing the logic for the GraphView component.
-use dioxus::prelude::*;
 use crate::{platform, StorageProvider};
+use dioxus::prelude::*;
 
 static KITCHEN_SINK: &str = include_str!("../../assets/dot/kitchen_sink.dot");
 
@@ -17,7 +17,10 @@ pub fn use_graph_view_logic(key_path: String) -> Signal<String> {
 
     // Load the file content - this re-runs whenever key_path prop changes
     let initial_content = {
-        info!("use_graph_view_logic: Loading file for key_path: {}", key_path);
+        info!(
+            "use_graph_view_logic: Loading file for key_path: {}",
+            key_path
+        );
         let storage_clone = storage.clone();
         let decoded_clone = decoded.clone();
         storage_clone
@@ -40,10 +43,13 @@ pub fn use_graph_view_logic(key_path: String) -> Signal<String> {
     // IMPORTANT: use_signal is called every render, but it only initializes once
     // We need to UPDATE the signal when key_path changes
     let mut dot_input = use_signal(|| initial_content.clone());
-    
+
     // Update the signal content when key_path changes
     use_effect(move || {
-        info!("use_graph_view_logic effect: Updating dot_input signal with new content (len: {})", initial_content.len());
+        info!(
+            "use_graph_view_logic effect: Updating dot_input signal with new content (len: {})",
+            initial_content.len()
+        );
         dot_input.set(initial_content.clone());
     });
 

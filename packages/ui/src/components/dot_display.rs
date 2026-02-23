@@ -10,11 +10,7 @@ use crate::error::RenderError;
 use crate::GVizProvider;
 
 #[component]
-pub fn DotDisplay(
-    dot: String,
-    error_signal: Signal<Option<RenderError>>,
-    rough: bool,
-) -> Element {
+pub fn DotDisplay(dot: String, error_signal: Signal<Option<RenderError>>, rough: bool) -> Element {
     let mut svg_signal = use_signal(|| None::<String>);
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
 

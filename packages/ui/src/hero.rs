@@ -33,4 +33,3 @@ pub fn Hero() -> Element {
         }
     }
 }
-

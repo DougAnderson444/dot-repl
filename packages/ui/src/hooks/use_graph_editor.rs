@@ -1,6 +1,6 @@
 //! A "headless" hook containing the logic for the GraphEditor component.
-use dioxus::prelude::*;
 use crate::error::RenderError;
+use dioxus::prelude::*;
 
 /// A headless hook containing the logic for the GraphEditor component.
 ///
