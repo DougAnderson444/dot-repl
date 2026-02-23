@@ -11,8 +11,60 @@ use dioxus::prelude::*;
 static KITCHEN_SINK: &str = include_str!("../../assets/dot/kitchen_sink.dot");
 const TAILWIND_CSS: Asset = asset!("../../assets/tailwind.css");
 
+/// makes a new default dot replacing the name of the graph witht he name of the <URL>.dot
+fn make_default(title: String) -> String {
+    format!(
+        r##"digraph "{}" {{
+  // Global graph attributes
+  label="{}";
+  labelloc=top;
+  fontname="Helvetica";
+  fontsize=12;
+  color="#444444";
+  charset="UTF-8";
+
+  node [
+    fontname="Helvetica";
+    fontsize=11;
+    style=filled;
+    fillcolor="#e8f4ff";
+    color="#336699"
+  ];
+
+  edge [
+    color="#666666";
+    arrowsize=0.9;
+    fontname="Helvetica";
+    fontsize=10;
+  ];
+
+  creating -> new_file;
+}}"##, // Double hash here ends the double hash start
+        title,
+        title
+            .strip_suffix(".dot")
+            .unwrap_or(&title)
+            .replace("_", " ")
+            .split_whitespace()
+            .map(|word| {
+                let mut chars = word.chars();
+                match chars.next() {
+                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                    None => String::new(),
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(" ")
+    )
+}
+
 #[component]
-pub fn GraphView<R>(route: R, key_path: String, rough_enabled: Signal<bool>) -> Element
+pub fn GraphView<R>(
+    route: R,
+    key_path: String,
+    rough_enabled: Signal<bool>,
+    starter: Option<String>,
+) -> Element
 where
     R: Routable + Clone + PartialEq,
 {
@@ -34,7 +86,9 @@ where
                 let d = if decoded_clone == "kitchen_sink.dot" {
                     KITCHEN_SINK.to_string()
                 } else {
-                    "digraph { creating -> new_file; }".to_string()
+                    starter
+                        .clone()
+                        .unwrap_or_else(|| make_default(decoded_clone.clone()))
                 };
                 if let Err(e) = storage_clone.save(&decoded_clone, d.as_bytes()) {
                     error!("Failed to save new file to storage: {}", e);
