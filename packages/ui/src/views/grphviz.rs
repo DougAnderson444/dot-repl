@@ -4,7 +4,7 @@
 use crate::{
     components::{CodeEditor, DotDisplay, ErrorOverlay},
     hooks::use_graph_editor_logic,
-    platform, StorageProvider,
+    platform, PreloadComplete, StorageProvider,
 };
 use dioxus::prelude::*;
 
@@ -72,17 +72,28 @@ where
     let storage = use_context::<StorageProvider>();
     let mut editor = use_graph_editor_logic();
 
+    // Subscribe to preload_complete so the effect re-runs once assets are in storage.
+    // try_use_context so this compiles for desktop too (no PreloadComplete provided there).
+    let preload_complete = use_context::<PreloadComplete>();
+
     let decoded = url_escape::decode(&key_path).to_string();
 
     let storage_clone = storage.clone();
     let decoded_clone = decoded.clone();
     use_effect(move || {
-        // triggers when key_path changes
+        // Re-runs when key_path OR preload_complete changes.
         let _ = use_route::<R>();
+        let preloaded = preload_complete();
+
         let dot = storage_clone
             .load(&decoded_clone)
             .map(|data| String::from_utf8_lossy(&data).to_string())
             .unwrap_or_else(|_| {
+                // Storage miss: don't fall back to make_default while preload is still
+                // in-flight — we'd clobber the real file once it arrives.
+                if !preloaded {
+                    return String::new();
+                }
                 let d = if decoded_clone == "kitchen_sink.dot" {
                     KITCHEN_SINK.to_string()
                 } else {
@@ -96,8 +107,12 @@ where
                 d
             });
 
-        dot_input.set(dot);
+        // Don't overwrite existing content with an empty pending string.
+        if !dot.is_empty() {
+            dot_input.set(dot);
+        }
     });
+
 
     // Add auto-save effect with debouncing
     use_effect(move || {

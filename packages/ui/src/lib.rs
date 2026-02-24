@@ -25,3 +25,9 @@ pub use gviz::{GVizProvider, GraphVizable};
 
 /// Platform specific utilities
 mod platform;
+
+/// A signal provided in context by `WebApp` (or any platform host) that flips
+/// to `true` once all static DOT assets have been preloaded into storage.
+/// Components that read storage on mount (e.g. `GraphView`) subscribe to this
+/// so they automatically re-try after the preload completes.
+pub type PreloadComplete = dioxus::prelude::Signal<bool>;

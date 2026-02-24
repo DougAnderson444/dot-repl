@@ -18,8 +18,16 @@ pub fn DotDisplay(dot: String, error_signal: Signal<Option<RenderError>>, rough:
     let mut last_dot = use_signal(|| String::new());
     let dot_changed = last_dot.read().as_str() != dot.as_str();
 
-    if dot_changed {
-        last_dot.set(dot.clone());
+    // Also re-render when GViz becomes available and we have a dot with no SVG yet.
+    // This covers the race where dot arrived before GViz finished loading.
+    let gviz_just_ready = gviz_signal.read().is_some()
+        && svg_signal.read().is_none()
+        && !dot.is_empty();
+
+    if dot_changed || gviz_just_ready {
+        if dot_changed {
+            last_dot.set(dot.clone());
+        }
         let gviz_signal_val = gviz_signal.read();
 
         if let Some(gviz) = gviz_signal_val.as_ref() {

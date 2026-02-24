@@ -11,7 +11,7 @@ pub mod asset_loader;
 
 use dioxus::prelude::*;
 
-use dot_repl_ui::{GVizProvider, StorageProvider};
+use dot_repl_ui::{GVizProvider, PreloadComplete, StorageProvider};
 
 use gloo_timers::future::sleep;
 use std::time::Duration;
@@ -34,6 +34,12 @@ pub fn WebApp(children: Element) -> Element {
     // Global rough_enabled state that persists across navigation
     let rough_enabled = use_signal(|| false);
     use_context_provider(|| rough_enabled);
+
+    // Flips to true once the host app finishes preloading static DOT assets.
+    // GraphView subscribes to this so it re-reads storage after preload completes.
+    let preload_complete: PreloadComplete = use_signal(|| false);
+    use_context_provider(|| preload_complete);
+
 
     spawn(async move {
         // Wait for the viz_instance_promise to be loaded
