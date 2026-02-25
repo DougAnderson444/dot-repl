@@ -549,23 +549,21 @@ fn strip_doctype(raw: &str) -> Cow<'_, str> {
         return Cow::Borrowed(raw);
     }
     let mut out = String::with_capacity(raw.len());
-    let mut i = 0;
-    let b = raw.as_bytes();
-    while i < b.len() {
-        if b[i] == b'<' && raw[i..].starts_with("<!DOCTYPE") {
-            i += "<!DOCTYPE".len();
-            while i < b.len() && b[i] != b'>' {
-                i += 1;
+    let mut chars = raw.char_indices().peekable();
+    while let Some((i, c)) = chars.next() {
+        if c == '<' && raw[i..].starts_with("<!DOCTYPE") {
+            // Skip ahead past the closing '>'
+            for (_, c) in chars.by_ref() {
+                if c == '>' {
+                    break;
+                }
             }
-            if i < b.len() {
-                i += 1;
-            }
-            while i < b.len() && matches!(b[i], b'\n' | b'\r') {
-                i += 1;
+            // Skip the trailing newline(s)
+            while matches!(chars.peek(), Some((_, '\n')) | Some((_, '\r'))) {
+                chars.next();
             }
         } else {
-            out.push(b[i] as char);
-            i += 1;
+            out.push(c);
         }
     }
     Cow::Owned(out)
