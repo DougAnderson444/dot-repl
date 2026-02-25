@@ -83,10 +83,13 @@ impl Default for SvgBuildConfig {
                     LinkKind::Fragment(rest.to_string())
                 } else if href.starts_with("http://") || href.starts_with("https://") {
                     LinkKind::External(href.to_string())
-                } else
-                // include dioxus://index.html/graphviz/ZGlncmFwaC...
-                if href.starts_with('/') {
+                } else if href.starts_with('/') {
+                    // Absolute-path internal link (e.g. URL="/gossipdb-authn.dot")
                     LinkKind::Internal(href.to_string())
+                } else if href.ends_with(".dot") {
+                    // Relative .dot link without leading slash (e.g. URL="gossipdb-authn.dot").
+                    // Normalise to an absolute path so the router can match /:key_path.
+                    LinkKind::Internal(format!("/{href}"))
                 } else {
                     LinkKind::None
                 }
