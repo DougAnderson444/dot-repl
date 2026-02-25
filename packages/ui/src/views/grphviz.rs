@@ -113,7 +113,6 @@ where
         }
     });
 
-
     // Add auto-save effect with debouncing
     use_effect(move || {
         let current_dot = dot_input();

@@ -40,7 +40,6 @@ pub fn WebApp(children: Element) -> Element {
     let preload_complete: PreloadComplete = use_signal(|| false);
     use_context_provider(|| preload_complete);
 
-
     spawn(async move {
         // Wait for the viz_instance_promise to be loaded
         loop {
