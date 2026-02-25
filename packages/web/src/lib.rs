@@ -9,10 +9,12 @@ mod storage;
 pub use storage::WebStorage;
 pub mod asset_loader;
 
+use dioxus::logger::tracing;
 use dioxus::prelude::*;
 
 use dot_repl_ui::{GVizProvider, PreloadComplete, StorageProvider};
 
+use crate::asset_loader::preload_dot_files;
 use gloo_timers::future::sleep;
 use std::time::Duration;
 use wasm_bindgen::JsValue;
@@ -22,7 +24,7 @@ use web_sys::js_sys::Reflect;
 pub fn WebApp(children: Element) -> Element {
     // Build cool things ✌️
     let storage = storage::WebStorage::new();
-    let storage_provider = StorageProvider::new(storage);
+    let storage_provider = StorageProvider::new(storage.clone());
 
     // provide storgae in context for all child elements
     use_context_provider(|| storage_provider);
@@ -37,8 +39,23 @@ pub fn WebApp(children: Element) -> Element {
 
     // Flips to true once the host app finishes preloading static DOT assets.
     // GraphView subscribes to this so it re-reads storage after preload completes.
-    let preload_complete: PreloadComplete = use_signal(|| false);
+    let mut preload_complete: PreloadComplete = use_signal(|| false);
     use_context_provider(|| preload_complete);
+
+    // Preload DOT assets from the server on every cold page load.
+    // Uses a server-hash sentinel in LocalStorage to decide whether to
+    // overwrite existing data: if the server has a new version of a file it
+    // gets written; if not, the user's local copy (possibly hand-edited) is
+    // kept intact.  In-session edits are always safe — they live in signals.
+    let preload_storage = storage.clone();
+    spawn(async move {
+        match preload_dot_files(&preload_storage, "/assets/dots").await {
+            Ok(n) => tracing::info!("Preloaded {} DOT file(s) from server", n),
+            Err(e) => tracing::warn!("DOT preload failed: {}", e),
+        }
+        // Signal to GraphView (and any other subscriber) that storage is ready.
+        preload_complete.set(true);
+    });
 
     spawn(async move {
         // Wait for the viz_instance_promise to be loaded

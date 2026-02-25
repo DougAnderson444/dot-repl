@@ -1,20 +1,35 @@
+use crate::storage::{fnv1a_hex, WebStorage};
 use dioxus::logger::tracing;
-use dioxus::prelude::*;
-use dot_repl_ui::PlatformStorage;
+use dot_repl_ui::PlatformStorage as _;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{window, Request, RequestInit, RequestMode, Response};
 
-/// Pre-populate LocalStorage with DOT files from static assets
-/// Uses Dioxus asset! macro to get the correct folder path with hash
-/// Fetches manifest.json to discover available files
-pub async fn preload_dot_files(
-    storage: &impl PlatformStorage,
-    dots_folder: &str,
-) -> Result<usize, String> {
+/// Pre-populate LocalStorage with DOT files from static assets.
+///
+/// ## Freshness strategy
+///
+/// We want two things to be true simultaneously:
+///
+/// 1. **Users keep their in-session edits** – while the page is open the
+///    running `dot_input` signal holds the user's work in memory; we never
+///    touch that here.
+/// 2. **Stale cached files are refreshed on the next page load** – when a
+///    new deploy ships updated `.dot` files we must overwrite the copy in
+///    `LocalStorage` so the user sees fresh content after a reload / revisit.
+///
+/// We achieve this by storing a *server content hash* alongside every file
+/// (under `{filename}\0__server_hash`).  On each cold load we:
+///
+/// - Always fetch the current server content.
+/// - Compare its hash to the previously stored server hash.
+/// - If the hashes differ ⟹ the server has a new version: overwrite storage
+///   and update the server-hash sentinel.
+/// - If the hashes match ⟹ nothing changed server-side: keep whatever the
+///   user has stored (they may have edited it) and leave it alone.
+pub async fn preload_dot_files(storage: &WebStorage, dots_folder: &str) -> Result<usize, String> {
     tracing::info!("Fetching DOT files manifest from {}...", dots_folder);
 
-    // Fetch the manifest.json to discover available files
     let manifest_url = format!("{}/manifest.json", dots_folder);
 
     let filenames: Vec<String> = match fetch_json(&manifest_url).await {
@@ -30,44 +45,53 @@ pub async fn preload_dot_files(
     let mut loaded_count = 0;
 
     for filename in filenames {
-        // Skip if already exists in storage (user may have edited)
-        if storage.exists(&filename) {
-            tracing::debug!("Skipping {}: already exists in storage", filename);
-            continue;
-        }
-
-        // Fetch from /assets/dots/ directory
         let url = format!("{}/{}", dots_folder, filename);
-
         tracing::info!("Fetching DOT url {}", url);
 
-        match fetch_string(&url).await {
-            Ok(content) => {
-                // Check if we should update: either doesn't exist or content differs
-                let should_update = if storage.exists(&filename) {
-                    // Load existing and compare
-                    match storage.load(&filename) {
-                        Ok(existing) => existing != content.as_bytes(),
-                        Err(_) => true, // Error reading, update it
-                    }
-                } else {
-                    true // Doesn't exist, load it
-                };
-
-                if should_update {
-                    if let Err(e) = storage.save(&filename, content.as_bytes()) {
-                        tracing::warn!("Failed to save {}: {}", filename, e);
-                    } else {
-                        tracing::info!("Loaded {} ({} bytes)", filename, content.len());
-                        loaded_count += 1;
-                    }
-                } else {
-                    tracing::info!("Skipping {}: unchanged in storage", filename);
-                }
-            }
+        let content = match fetch_string(&url).await {
+            Ok(c) => c,
             Err(e) => {
                 tracing::warn!("Failed to fetch {}: {}", url, e);
+                continue;
             }
+        };
+
+        let server_hash = fnv1a_hex(content.as_bytes());
+        let stored_server_hash = storage.load_server_hash(&filename);
+
+        let server_updated = stored_server_hash
+            .as_deref()
+            .map(|h| h != server_hash)
+            // No sentinel yet means this is the very first load — always store.
+            .unwrap_or(true);
+
+        if server_updated {
+            // The server has a new (or brand-new) version of this file.
+            // Overwrite LocalStorage so the user sees fresh content on this
+            // and every subsequent cold load — until the server ships another
+            // change.  In-session edits live in the running signal and are
+            // unaffected.
+            match storage.save(&filename, content.as_bytes()) {
+                Ok(_) => {
+                    storage.save_server_hash(&filename, &server_hash);
+                    tracing::info!(
+                        "Updated {} from server ({} bytes, hash {})",
+                        filename,
+                        content.len(),
+                        &server_hash[..8]
+                    );
+                    loaded_count += 1;
+                }
+                Err(e) => tracing::warn!("Failed to save {}: {}", filename, e),
+            }
+        } else {
+            // Server content is unchanged.  Leave LocalStorage alone so any
+            // edits the user made in a previous session are preserved.
+            tracing::debug!(
+                "Skipping {}: server content unchanged (hash {})",
+                filename,
+                &server_hash[..8]
+            );
         }
     }
 
