@@ -54,6 +54,33 @@ impl WebStorage {
         let sentinel = server_hash_key(key);
         LocalStorage::get::<String>(&sentinel).ok()
     }
+
+    /// Delete the server-hash sentinel for `key`.
+    pub fn delete_server_hash(&self, key: &str) {
+        let sentinel = server_hash_key(key);
+        LocalStorage::delete(&sentinel);
+    }
+
+    /// Return all keys that currently have a server-hash sentinel in storage.
+    /// This allows the asset loader to identify and remove files that are no
+    /// longer present in the server's manifest.
+    pub fn get_all_server_tracked_keys(&self) -> Vec<String> {
+        let window = web_sys::window().expect("no window");
+        let local_storage = window.local_storage().expect("no local storage").expect("no local storage");
+        let length = local_storage.length().expect("no length");
+        let mut keys = Vec::new();
+
+        for i in 0..length {
+            if let Ok(Some(key)) = local_storage.key(i) {
+                if key.ends_with("\0__server_hash") {
+                    // Strip the sentinel suffix to get the original key
+                    let original_key = &key[..key.len() - "\0__server_hash".len()];
+                    keys.push(original_key.to_string());
+                }
+            }
+        }
+        keys
+    }
 }
 
 impl Default for WebStorage {

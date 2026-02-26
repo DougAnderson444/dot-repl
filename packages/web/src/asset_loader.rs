@@ -1,6 +1,7 @@
 use crate::storage::{fnv1a_hex, WebStorage};
 use dioxus::logger::tracing;
 use dot_repl_ui::PlatformStorage as _;
+use std::collections::HashSet;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{window, Request, RequestInit, RequestMode, Response};
@@ -14,19 +15,14 @@ use web_sys::{window, Request, RequestInit, RequestMode, Response};
 /// 1. **Users keep their in-session edits** – while the page is open the
 ///    running `dot_input` signal holds the user's work in memory; we never
 ///    touch that here.
-/// 2. **Stale cached files are refreshed on the next page load** – when a
-///    new deploy ships updated `.dot` files we must overwrite the copy in
-///    `LocalStorage` so the user sees fresh content after a reload / revisit.
+/// 2. **Server content is the source of truth on reload** – when the page
+///    reloads (or on first visit), we sync LocalStorage with the server's
+///    manifest. Any file on the server overwrites the local copy if it
+///    differs (resetting any persistent edits from a previous session).
+///    Files no longer in the manifest are removed from storage.
 ///
-/// We achieve this by storing a *server content hash* alongside every file
-/// (under `{filename}\0__server_hash`).  On each cold load we:
-///
-/// - Always fetch the current server content.
-/// - Compare its hash to the previously stored server hash.
-/// - If the hashes differ ⟹ the server has a new version: overwrite storage
-///   and update the server-hash sentinel.
-/// - If the hashes match ⟹ nothing changed server-side: keep whatever the
-///   user has stored (they may have edited it) and leave it alone.
+/// This ensures "The user has until the page reloads in order to do something
+/// with their changes" (e.g. download or copy them).
 pub async fn preload_dot_files(storage: &WebStorage, dots_folder: &str) -> Result<usize, String> {
     tracing::info!("Fetching DOT files manifest from {}...", dots_folder);
 
@@ -43,8 +39,10 @@ pub async fn preload_dot_files(storage: &WebStorage, dots_folder: &str) -> Resul
     tracing::info!("Found {} DOT files in manifest", filenames.len());
 
     let mut loaded_count = 0;
+    let mut manifest_filenames = HashSet::new();
 
-    for filename in filenames {
+    for filename in &filenames {
+        manifest_filenames.insert(filename.clone());
         let url = format!("{}/{}", dots_folder, filename);
         tracing::info!("Fetching DOT url {}", url);
 
@@ -57,23 +55,19 @@ pub async fn preload_dot_files(storage: &WebStorage, dots_folder: &str) -> Resul
         };
 
         let server_hash = fnv1a_hex(content.as_bytes());
-        let stored_server_hash = storage.load_server_hash(&filename);
-
-        let server_updated = stored_server_hash
-            .as_deref()
-            .map(|h| h != server_hash)
-            // No sentinel yet means this is the very first load — always store.
+        let current_local_content = storage.load(filename).ok();
+        
+        let needs_update = current_local_content
+            .as_ref()
+            .map(|c| c != content.as_bytes())
             .unwrap_or(true);
 
-        if server_updated {
-            // The server has a new (or brand-new) version of this file.
-            // Overwrite LocalStorage so the user sees fresh content on this
-            // and every subsequent cold load — until the server ships another
-            // change.  In-session edits live in the running signal and are
-            // unaffected.
-            match storage.save(&filename, content.as_bytes()) {
+        if needs_update {
+            // The server content is different from what's in LocalStorage.
+            // Overwrite LocalStorage so the user sees fresh content from the server.
+            match storage.save(filename, content.as_bytes()) {
                 Ok(_) => {
-                    storage.save_server_hash(&filename, &server_hash);
+                    storage.save_server_hash(filename, &server_hash);
                     tracing::info!(
                         "Updated {} from server ({} bytes, hash {})",
                         filename,
@@ -85,13 +79,21 @@ pub async fn preload_dot_files(storage: &WebStorage, dots_folder: &str) -> Resul
                 Err(e) => tracing::warn!("Failed to save {}: {}", filename, e),
             }
         } else {
-            // Server content is unchanged.  Leave LocalStorage alone so any
-            // edits the user made in a previous session are preserved.
-            tracing::debug!(
-                "Skipping {}: server content unchanged (hash {})",
-                filename,
-                &server_hash[..8]
-            );
+            // Content is already identical.  Update/save the server hash sentinel
+            // just to be sure this file is marked as "server tracked".
+            storage.save_server_hash(filename, &server_hash);
+            tracing::debug!("Skipping {}: already matches server", filename);
+        }
+    }
+
+    // Cleanup: Remove any files that were previously tracked as "from server" 
+    // but are no longer in the current manifest.
+    let tracked_keys = storage.get_all_server_tracked_keys();
+    for key in tracked_keys {
+        if !manifest_filenames.contains(&key) {
+            tracing::info!("Removing stale file no longer in manifest: {}", key);
+            let _ = storage.delete(&key);
+            storage.delete_server_hash(&key);
         }
     }
 
