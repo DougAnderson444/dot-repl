@@ -2,7 +2,7 @@
 pub mod fonts;
 
 mod render;
-pub use render::{GraphvizSvg, SvgBuildConfig};
+pub use render::{GraphvizSvg, GroupHover, GroupKind, SvgBuildConfig};
 
 use dioxus::prelude::*;
 

@@ -11,6 +11,7 @@ ui-css:
   tailwindcss -i ./tailwind.css -o ./packages/ui/assets/tailwind.css
 
 desktop: css-desktop
+  cargo clean
   cd packages/desktop
   dx serve --package dot-repl-desktop
 

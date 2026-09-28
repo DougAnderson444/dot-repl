@@ -7,6 +7,7 @@ use dioxus::prelude::*;
 use dioxus_router::Navigator;
 use roxmltree::{Document, Node};
 use std::borrow::Cow;
+use std::collections::HashSet;
 
 #[cfg(feature = "rough")]
 use std::fmt::Display;
@@ -45,6 +46,36 @@ pub struct SvgBuildConfig {
     pub rough_options: RoughOptions,
     pub rough_use_custom_font: bool,
     pub rough_embed_font_data: Option<&'static str>,
+    /// `<g>` groups whose Graphviz `<title>` is in this set are not rendered.
+    /// Titles are node ids, `tail->head` for edges, and `cluster_*` ids for clusters.
+    pub hidden_titles: HashSet<String>,
+    /// `<g>` groups whose `<title>` is in this set get `data-marked="true"`
+    /// (e.g. to style collapsed clusters from CSS).
+    pub marked_titles: HashSet<String>,
+    /// Called with the cluster's `<title>` when a `<g class="cluster">` is clicked.
+    pub on_cluster_click: Option<EventHandler<String>>,
+    /// Called with the node's `<title>` when a `<g class="node">` is clicked.
+    pub on_node_click: Option<EventHandler<String>>,
+    /// Called when the pointer enters a node or cluster group, and with `None`
+    /// when it leaves.
+    pub on_group_hover: Option<EventHandler<Option<GroupHover>>>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GroupKind {
+    Node,
+    Cluster,
+}
+
+/// Pointer entered a Graphviz node or cluster group.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GroupHover {
+    /// Graphviz `<title>`: node id or `cluster_*` id.
+    pub title: String,
+    pub kind: GroupKind,
+    /// Viewport coordinates of the pointer on entry.
+    pub client_x: f64,
+    pub client_y: f64,
 }
 
 #[derive(Clone, PartialEq)]
@@ -103,6 +134,11 @@ impl Default for SvgBuildConfig {
             rough_options: RoughOptions::default(),
             rough_use_custom_font: true,
             rough_embed_font_data: None,
+            hidden_titles: HashSet::new(),
+            marked_titles: HashSet::new(),
+            on_cluster_click: None,
+            on_node_click: None,
+            on_group_hover: None,
         }
     }
 }
@@ -616,6 +652,18 @@ fn render_parse_error(err: roxmltree::Error, did_strip: bool) -> Element {
     }
 }
 
+/// Graphviz puts the node / edge / cluster name in the group's first `<title>`.
+fn graphviz_title(node: Node) -> Option<String> {
+    node.children()
+        .find(|c| c.has_tag_name("title"))
+        .map(|t| {
+            t.children()
+                .filter(|c| c.is_text())
+                .filter_map(|c| c.text())
+                .collect::<String>()
+        })
+}
+
 // ------------------------- Recursive build -------------------------
 
 const MAX_RECURSION_DEPTH: usize = 100;
@@ -648,6 +696,12 @@ fn build_node(
     }
 
     let tag = node.tag_name().name();
+    let group_title = if tag == "g" { graphviz_title(node) } else { None };
+    if let Some(t) = &group_title {
+        if cfg.hidden_titles.contains(t) {
+            return None;
+        }
+    }
     let attrs = collect_attrs(node);
     let children: Vec<Element> = node
         .children()
@@ -696,15 +750,84 @@ fn build_node(
                 }
             }
         }
-        "g" => rsx! {
-            g {
-                id: attrs.id,
-                class: attrs.class,
-                transform: attrs.transform,
-                style: attrs.style,
-                for child in children { {child} }
+        "g" => {
+            let marked = group_title
+                .as_ref()
+                .is_some_and(|t| cfg.marked_titles.contains(t))
+                .then_some("true");
+            let is_cluster = attrs
+                .class
+                .as_deref()
+                .is_some_and(|c| c.split_whitespace().any(|w| w == "cluster"));
+            let is_node = attrs
+                .class
+                .as_deref()
+                .is_some_and(|c| c.split_whitespace().any(|w| w == "node"));
+            let kind = if is_cluster {
+                Some(GroupKind::Cluster)
+            } else if is_node {
+                Some(GroupKind::Node)
+            } else {
+                None
+            };
+            let click = match kind {
+                Some(GroupKind::Cluster) => cfg.on_cluster_click,
+                Some(GroupKind::Node) => cfg.on_node_click,
+                None => None,
+            };
+            let hover = kind.and(cfg.on_group_hover);
+            match (kind, group_title) {
+                (Some(kind), Some(title)) if click.is_some() || hover.is_some() => {
+                    let click_title = title.clone();
+                    let hover_title = title.clone();
+                    rsx! {
+                        g {
+                            id: attrs.id,
+                            class: attrs.class,
+                            transform: attrs.transform,
+                            style: attrs.style,
+                            "data-marked": marked,
+                            "data-clickable-cluster": (click.is_some() && is_cluster).then_some("true"),
+                            "data-clickable-node": (click.is_some() && is_node).then_some("true"),
+                            cursor: click.is_some().then_some("pointer"),
+                            onclick: move |evt| {
+                                if let Some(handler) = click {
+                                    evt.stop_propagation();
+                                    handler.call(click_title.clone());
+                                }
+                            },
+                            onmouseenter: move |evt| {
+                                if let Some(handler) = hover {
+                                    let p = evt.client_coordinates();
+                                    handler.call(Some(GroupHover {
+                                        title: hover_title.clone(),
+                                        kind,
+                                        client_x: p.x,
+                                        client_y: p.y,
+                                    }));
+                                }
+                            },
+                            onmouseleave: move |_| {
+                                if let Some(handler) = hover {
+                                    handler.call(None);
+                                }
+                            },
+                            for child in children { {child} }
+                        }
+                    }
+                }
+                _ => rsx! {
+                    g {
+                        id: attrs.id,
+                        class: attrs.class,
+                        transform: attrs.transform,
+                        style: attrs.style,
+                        "data-marked": marked,
+                        for child in children { {child} }
+                    }
+                },
             }
-        },
+        }
         "text" => rsx! {
             text {
                 id: attrs.id,

@@ -1,5 +1,5 @@
 mod dot_display;
-pub use dot_display::{fonts, DotDisplay, GraphvizSvg, SvgBuildConfig};
+pub use dot_display::{fonts, DotDisplay, GraphvizSvg, GroupHover, GroupKind, SvgBuildConfig};
 
 mod error_overlay;
 pub use error_overlay::ErrorOverlay;

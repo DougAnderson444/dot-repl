@@ -2,7 +2,6 @@
 use dioxus::prelude::*;
 
 use crate::components::dot_display::{GraphvizSvg, SvgBuildConfig};
-use crate::error::Error as UiError;
 use crate::GVizProvider;
 
 /// Renders a DOT string into a self-contained, interactive SVG.
@@ -31,56 +30,87 @@ pub fn StandaloneDotDisplay(
     };
 
     let gviz_signal = use_context::<Signal<Option<GVizProvider>>>();
+    // Track the last rendered DOT so prop updates (e.g. router drills that keep
+    // this component mounted) actually re-render. A `use_memo` that only reads
+    // `gviz_signal` will keep the first SVG forever.
+    let mut last_dot = use_signal(String::new);
+    let mut svg_signal = use_signal(|| None::<String>);
+    let mut had_error = use_signal(|| false);
 
-    // Memoize the expensive rendering process. The closure captures the `gviz_signal`
-    // and `dot` string, both of which have a `'static` lifetime, satisfying
-    // the hook's requirements. The memo will re-run if `gviz_signal` changes.
-    let svg_result = use_memo(move || {
+    let dot_changed = last_dot.read().as_str() != dot.as_str();
+    let gviz_just_ready =
+        gviz_signal.read().is_some() && svg_signal.read().is_none() && !dot.is_empty();
+
+    if dot_changed || gviz_just_ready {
+        if dot_changed {
+            last_dot.set(dot.clone());
+        }
         if let Some(gviz) = gviz_signal.read().as_ref() {
-            gviz.render_dot(&dot)
-        } else {
-            Err(UiError::GvizNotInitialized)
+            if dot.is_empty() {
+                svg_signal.set(None);
+                had_error.set(false);
+            } else {
+                match gviz.render_dot(&dot) {
+                    Ok(svg) => {
+                        had_error.set(false);
+                        svg_signal.set(Some(svg));
+                    }
+                    Err(_) => {
+                        had_error.set(true);
+                        svg_signal.set(None);
+                    }
+                }
+            }
         }
-    });
+    }
 
-    match svg_result() {
-        Ok(svg) => {
-            let config = SvgBuildConfig {
-                rough_style,
-                scale_to_fit,
-                ..Default::default()
-            };
-            rsx! {
+    if gviz_signal.read().is_none() {
+        return rsx! {
+            div {
+                class: "{container_class} flex items-center justify-center",
                 div {
-                    class: "{container_class}",
-                    GraphvizSvg {
-                        svg_text: svg,
-                        config: config
-                    }
+                    class: "text-gray-400 p-2 text-center text-xs",
+                    "Loading..."
+                }
+            }
+        };
+    }
+
+    if *had_error.read() {
+        return rsx! {
+            div {
+                class: "{container_class} flex items-center justify-center",
+                div {
+                    class: "text-red-500 p-2 text-center text-xs",
+                    "Render Error"
+                }
+            }
+        };
+    }
+
+    let svg = svg_signal.read().clone();
+    if let Some(svg) = svg {
+        let config = SvgBuildConfig {
+            rough_style,
+            scale_to_fit,
+            ..Default::default()
+        };
+        rsx! {
+            div {
+                class: "{container_class}",
+                GraphvizSvg {
+                    svg_text: svg,
+                    config: config
                 }
             }
         }
-        Err(UiError::GvizNotInitialized) => {
-            // Graphviz engine is not yet available.
-            rsx! {
+    } else {
+        rsx! {
+            div {
+                class: "{container_class} flex items-center justify-center",
                 div {
-                    class: "{container_class} flex items-center justify-center",
-                    div {
-                        class: "text-gray-400 p-2 text-center text-xs",
-                        "Loading..."
-                    }
-                }
-            }
-        }
-        Err(_) => {
-            // Handle cases where the DOT string is invalid.
-            rsx! {
-                div {
-                    class: "{container_class} flex items-center justify-center",
-                    div {
-                        class: "text-red-500 p-2 text-center text-xs",
-                        "Render Error"
-                    }
+                    class: "text-gray-400 p-2 text-center text-xs",
+                    "Rendering..."
                 }
             }
         }
