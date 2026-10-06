@@ -7,7 +7,8 @@ use dioxus::prelude::*;
 use dioxus_router::Navigator;
 use roxmltree::{Document, Node};
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 #[cfg(feature = "rough")]
 use std::fmt::Display;
@@ -59,7 +60,36 @@ pub struct SvgBuildConfig {
     /// Called when the pointer enters a node or cluster group, and with `None`
     /// when it leaves.
     pub on_group_hover: Option<EventHandler<Option<GroupHover>>>,
+    /// Hovering a node dims the rest of the graph and highlights its edges and
+    /// neighbors; hovering an edge highlights it and its two ends.
+    pub highlight_on_hover: bool,
 }
+
+/// What the pointer is over, for hover highlighting.
+#[derive(Clone, Debug, PartialEq)]
+struct Highlight {
+    /// Hovered node title (edges touching it are highlighted).
+    node: Option<String>,
+    /// Hovered edge title.
+    edge: Option<String>,
+    /// Nodes kept at full opacity.
+    nodes: Vec<String>,
+    /// Hash of the SVG the highlight came from. Navigating away removes the
+    /// hovered element without a `mouseleave`, so a stale highlight must not
+    /// apply to the next page.
+    page: u64,
+}
+
+/// Per-render state threaded through [`build_node`].
+struct BuildCtx {
+    navigator: Navigator,
+    hover: Option<Signal<Option<Highlight>>>,
+    page: u64,
+    /// Node title → titles of nodes sharing an edge with it.
+    neighbors: HashMap<String, Vec<String>>,
+}
+
+const HIGHLIGHT_COLOR: &str = "#e65100";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GroupKind {
@@ -139,6 +169,7 @@ impl Default for SvgBuildConfig {
             on_cluster_click: None,
             on_node_click: None,
             on_group_hover: None,
+            highlight_on_hover: true,
         }
     }
 }
@@ -613,6 +644,16 @@ fn strip_doctype(raw: &str) -> Cow<'_, str> {
 #[component]
 pub fn GraphvizSvg(svg_text: String, config: SvgBuildConfig) -> Element {
     let navigator = use_navigator();
+    let mut hover = use_signal(|| None::<Highlight>);
+    let page = {
+        let mut h = DefaultHasher::new();
+        svg_text.hash(&mut h);
+        h.finish()
+    };
+    use_effect(use_reactive!(|page| {
+        let _ = page;
+        hover.set(None);
+    }));
 
     let mut cow: Cow<'_, str> = if config.strip_doctype {
         strip_doctype(&svg_text)
@@ -639,7 +680,114 @@ pub fn GraphvizSvg(svg_text: String, config: SvgBuildConfig) -> Element {
         return rsx! { svg { class: "graphviz-svg error", "No <svg> root found." } };
     };
 
-    build_node(root, &config, navigator, 0).unwrap_or(rsx! {})
+    let ctx = BuildCtx {
+        navigator,
+        hover: config.highlight_on_hover.then_some(hover),
+        page,
+        neighbors: if config.highlight_on_hover {
+            edge_neighbors(root)
+        } else {
+            HashMap::new()
+        },
+    };
+    build_node(root, &config, &ctx, 0).unwrap_or(rsx! {})
+}
+
+fn has_class(attrs: &SvgAttrs, class: &str) -> bool {
+    attrs
+        .class
+        .as_deref()
+        .is_some_and(|c| c.split_whitespace().any(|w| w == class))
+}
+
+/// Splits a Graphviz edge title (`tail->head` or `tail--head`) into its ends.
+fn edge_ends(title: &str) -> Option<(&str, &str)> {
+    title.split_once("->").or_else(|| title.split_once("--"))
+}
+
+fn edge_neighbors(root: Node) -> HashMap<String, Vec<String>> {
+    let mut map: HashMap<String, Vec<String>> = HashMap::new();
+    for g in root.descendants().filter(|n| n.has_tag_name("g")) {
+        let is_edge = g
+            .attribute("class")
+            .is_some_and(|c| c.split_whitespace().any(|w| w == "edge"));
+        let Some(title) = is_edge.then(|| graphviz_title(g)).flatten() else {
+            continue;
+        };
+        if let Some((tail, head)) = edge_ends(&title) {
+            map.entry(tail.to_string()).or_default().push(head.to_string());
+            map.entry(head.to_string()).or_default().push(tail.to_string());
+        }
+    }
+    map
+}
+
+/// Escapes a value for use inside a double-quoted CSS attribute selector.
+fn css_str(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    for c in value.chars() {
+        match c {
+            '\\' | '"' => {
+                out.push('\\');
+                out.push(c);
+            }
+            '\n' => out.push_str("\\a "),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+fn highlight_css(h: &Highlight) -> String {
+    let mut css = String::from("g.node, g.edge { opacity: 0.2; }\n");
+    for n in &h.nodes {
+        css.push_str(&format!("g.node[data-node=\"{}\"] {{ opacity: 1; }}\n", css_str(n)));
+    }
+    let edges = match (&h.edge, &h.node) {
+        (Some(e), _) => vec![format!("g.edge[data-edge=\"{}\"]", css_str(e))],
+        (None, Some(n)) => {
+            let n = css_str(n);
+            vec![
+                format!("g.edge[data-tail=\"{n}\"]"),
+                format!("g.edge[data-head=\"{n}\"]"),
+            ]
+        }
+        (None, None) => Vec::new(),
+    };
+    let select = |suffix: &str| {
+        edges
+            .iter()
+            .map(|e| format!("{e}{suffix}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    if !edges.is_empty() {
+        let c = HIGHLIGHT_COLOR;
+        css.push_str(&format!("{} {{ opacity: 1; }}\n", select("")));
+        css.push_str(&format!("{} {{ stroke: {c}; stroke-width: 3px; }}\n", select(" path")));
+        css.push_str(&format!("{} {{ stroke: {c}; stroke-width: 2px; }}\n", select(" polygon")));
+        css.push_str(&format!("{} {{ fill: {c}; }}\n", select(" polygon:not([fill=\"none\"])")));
+        css.push_str(&format!("{} {{ fill: {c}; font-weight: bold; }}\n", select(" text")));
+    }
+    if let Some(n) = &h.node {
+        css.push_str(&format!(
+            "g.node[data-node=\"{}\"] :is(polygon, ellipse, path) {{ stroke: {HIGHLIGHT_COLOR}; stroke-width: 3px; }}\n",
+            css_str(n)
+        ));
+    }
+    css
+}
+
+/// The only part of the graph that re-renders on hover.
+#[component]
+fn HoverStyle(hover: Signal<Option<Highlight>>, page: u64) -> Element {
+    let css = hover
+        .read()
+        .as_ref()
+        .filter(|h| h.page == page)
+        .map(highlight_css)
+        .unwrap_or_default();
+    rsx! { style { {css} } }
 }
 
 fn render_parse_error(err: roxmltree::Error, did_strip: bool) -> Element {
@@ -671,7 +819,7 @@ const MAX_RECURSION_DEPTH: usize = 100;
 fn build_node(
     node: Node,
     cfg: &SvgBuildConfig,
-    navigator: Navigator,
+    ctx: &BuildCtx,
     depth: usize,
 ) -> Option<Element> {
     if depth > MAX_RECURSION_DEPTH {
@@ -705,7 +853,7 @@ fn build_node(
     let attrs = collect_attrs(node);
     let children: Vec<Element> = node
         .children()
-        .filter_map(|c| build_node(c, cfg, navigator, depth + 1))
+        .filter_map(|c| build_node(c, cfg, ctx, depth + 1))
         .collect();
 
     let link_style = r#"
@@ -746,6 +894,9 @@ fn build_node(
                     "xmlns": "http://www.w3.org/2000/svg",
                     "xmlns:xlink": XLINK_NS,
                     style { {custom_style} }
+                    if let Some(hover) = ctx.hover {
+                        HoverStyle { hover, page: ctx.page }
+                    }
                     for child in children { {child} }
                 }
             }
@@ -755,14 +906,45 @@ fn build_node(
                 .as_ref()
                 .is_some_and(|t| cfg.marked_titles.contains(t))
                 .then_some("true");
-            let is_cluster = attrs
-                .class
-                .as_deref()
-                .is_some_and(|c| c.split_whitespace().any(|w| w == "cluster"));
-            let is_node = attrs
-                .class
-                .as_deref()
-                .is_some_and(|c| c.split_whitespace().any(|w| w == "node"));
+            let is_cluster = has_class(&attrs, "cluster");
+            let is_node = has_class(&attrs, "node");
+            let is_edge = has_class(&attrs, "edge");
+            let data_node = group_title.clone().filter(|_| is_node);
+            let data_edge = group_title.clone().filter(|_| is_edge);
+            let ends = data_edge.as_deref().and_then(edge_ends);
+            let data_tail = ends.map(|(t, _)| t.to_string());
+            let data_head = ends.map(|(_, h)| h.to_string());
+            let highlight = match (ctx.hover, &data_node, ends) {
+                (None, ..) => None,
+                (Some(_), Some(n), _) => {
+                    let mut nodes = ctx.neighbors.get(n).cloned().unwrap_or_default();
+                    nodes.push(n.clone());
+                    Some(Highlight {
+                        node: Some(n.clone()),
+                        edge: None,
+                        nodes,
+                        page: ctx.page,
+                    })
+                }
+                (Some(_), None, Some((tail, head))) => Some(Highlight {
+                    node: None,
+                    edge: data_edge.clone(),
+                    nodes: vec![tail.to_string(), head.to_string()],
+                    page: ctx.page,
+                }),
+                _ => None,
+            };
+            let hl_signal = ctx.hover.filter(|_| highlight.is_some());
+            let enter_hl = move |h: &Option<Highlight>| {
+                if let Some(mut sig) = hl_signal {
+                    sig.set(h.clone());
+                }
+            };
+            let leave_hl = move || {
+                if let Some(mut sig) = hl_signal {
+                    sig.set(None);
+                }
+            };
             let kind = if is_cluster {
                 Some(GroupKind::Cluster)
             } else if is_node {
@@ -787,6 +969,7 @@ fn build_node(
                             transform: attrs.transform,
                             style: attrs.style,
                             "data-marked": marked,
+                            "data-node": data_node,
                             "data-clickable-cluster": (click.is_some() && is_cluster).then_some("true"),
                             "data-clickable-node": (click.is_some() && is_node).then_some("true"),
                             cursor: click.is_some().then_some("pointer"),
@@ -797,6 +980,7 @@ fn build_node(
                                 }
                             },
                             onmouseenter: move |evt| {
+                                enter_hl(&highlight);
                                 if let Some(handler) = hover {
                                     let p = evt.client_coordinates();
                                     handler.call(Some(GroupHover {
@@ -808,6 +992,7 @@ fn build_node(
                                 }
                             },
                             onmouseleave: move |_| {
+                                leave_hl();
                                 if let Some(handler) = hover {
                                     handler.call(None);
                                 }
@@ -816,6 +1001,22 @@ fn build_node(
                         }
                     }
                 }
+                _ if hl_signal.is_some() => rsx! {
+                    g {
+                        id: attrs.id,
+                        class: attrs.class,
+                        transform: attrs.transform,
+                        style: attrs.style,
+                        "data-marked": marked,
+                        "data-node": data_node,
+                        "data-edge": data_edge,
+                        "data-tail": data_tail,
+                        "data-head": data_head,
+                        onmouseenter: move |_| enter_hl(&highlight),
+                        onmouseleave: move |_| leave_hl(),
+                        for child in children { {child} }
+                    }
+                },
                 _ => rsx! {
                     g {
                         id: attrs.id,
@@ -936,7 +1137,7 @@ fn build_node(
                 style: attrs.style,
             }
         },
-        "a" => build_anchor(attrs, children, cfg, navigator),
+        "a" => build_anchor(attrs, children, cfg, ctx.navigator),
 
         // Handle HTML table elements (from DOT labels)
         "table" | "tr" | "td" | "th" | "tbody" | "thead" => {
@@ -1227,5 +1428,43 @@ fn build_anchor(
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn splits_directed_and_undirected_edge_titles() {
+        assert_eq!(edge_ends("a::b->c"), Some(("a::b", "c")));
+        assert_eq!(edge_ends("a--b"), Some(("a", "b")));
+        assert_eq!(edge_ends("cluster_x"), None);
+    }
+
+    #[test]
+    fn neighbors_come_from_edge_titles() {
+        let svg = r#"<svg><g class="graph">
+            <g class="node"><title>a</title></g>
+            <g class="edge"><title>a&#45;&gt;b</title></g>
+            <g class="edge"><title>c&#45;&gt;a</title></g>
+        </g></svg>"#;
+        let doc = Document::parse(svg).unwrap();
+        let map = edge_neighbors(doc.root_element());
+        assert_eq!(map["a"], vec!["b".to_string(), "c".to_string()]);
+        assert_eq!(map["b"], vec!["a".to_string()]);
+    }
+
+    #[test]
+    fn highlight_css_targets_incident_edges_and_escapes() {
+        let css = highlight_css(&Highlight {
+            node: Some("x\"y".into()),
+            edge: None,
+            nodes: vec!["x\"y".into()],
+            page: 0,
+        });
+        assert!(css.contains(r#"g.edge[data-tail="x\"y"] path"#));
+        assert!(css.contains(r#"g.edge[data-head="x\"y"] path"#));
+        assert!(css.contains(r#"g.node[data-node="x\"y"] { opacity: 1; }"#));
     }
 }
